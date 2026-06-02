@@ -1,0 +1,25 @@
+---
+title: RDP Brute Force Attempt
+event_id: "4625"
+description: >
+  Multiple failed interactive remote logons (LogonType 10 = RemoteInteractive).
+  Distinguishes RDP attacks from local or network brute force.
+  Lower threshold than generic brute force as RDP attempts are high-value.
+severity: high
+confidence: 0.88
+technique: T1110.003
+mitre: Credential Access
+conditions:
+  - field: LogonType
+    equals: "10"
+  - field: TargetUserName
+    not_ends_with: "$"
+    not_empty: true
+    not_in:
+      - ANONYMOUS LOGON
+      - LOCAL SERVICE
+      - NETWORK SERVICE
+      - SYSTEM
+  - field: count_in_window
+    greater_than: 5
+    window_seconds: 300

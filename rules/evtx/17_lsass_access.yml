@@ -1,0 +1,22 @@
+---
+title: LSASS Memory Access (Credential Dumping)
+event_id: "10"
+description: >
+  Sysmon EID 10: a process opened LSASS (lsass.exe) for memory access.
+  This is the primary indicator of credential dumping tools such as
+  Mimikatz, ProcDump, and Task Manager credential extraction.
+  Fires regardless of the accessing account.
+  Requires: Sysmon deployed with ProcessAccess rule targeting lsass.exe.
+severity: critical
+confidence: 0.88
+technique: T1003.001
+mitre: Credential Access
+conditions:
+  - field: TargetImage
+    contains_any:
+      - "lsass.exe"
+  - field: SourceImage
+    not_contains_any:
+      - "\\csrss.exe"
+      - "\\werfault.exe"
+      - "\\ntoskrnl.exe"

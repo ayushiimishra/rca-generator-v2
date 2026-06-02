@@ -1,0 +1,21 @@
+---
+title: DCSync Attack Detected
+event_id: "4662"
+description: >
+  Directory replication rights (DS-Replication-Get-Changes /
+  DS-Replication-Get-Changes-All) accessed by a non-machine
+  account. DCSync lets an attacker replicate password hashes
+  from a Domain Controller without code execution on the DC.
+  Requires: "Audit Directory Service Access" policy enabled.
+severity: critical
+confidence: 0.90
+technique: T1003.006
+mitre: Credential Access
+conditions:
+  - field: SubjectUserName
+    not_ends_with: "$"
+    not_empty: true
+    not_in:
+      - SYSTEM
+      - LOCAL SERVICE
+      - NETWORK SERVICE

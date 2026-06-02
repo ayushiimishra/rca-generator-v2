@@ -1,0 +1,21 @@
+---
+title: After Hours Admin Privilege Assignment
+event_id: "4672"
+description: Admin privilege assigned outside business hours
+conditions:
+  - field: SubjectUserName
+    not_in:
+      - SYSTEM
+      - LOCAL SERVICE
+      - NETWORK SERVICE
+    not_ends_with: "$"
+    not_empty: true
+  - field: count_in_window
+    greater_than: 3
+    window_seconds: 600
+  - field: hour
+    outside_business_hours: true
+severity: high
+confidence: 0.8
+technique: T1078
+mitre: Privilege Escalation

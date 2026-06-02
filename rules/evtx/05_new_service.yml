@@ -1,0 +1,21 @@
+---
+title: New Service Installed by User Account
+event_id: "7045"
+description: >
+  A named user account (not a system/service account) installed a
+  new Windows service. Medium confidence as legitimate admins do
+  install services. Correlate with other persistence indicators.
+  For high-confidence path-based detection see rule 15.
+severity: medium
+confidence: 0.65
+technique: T1543.003
+mitre: Persistence
+conditions:
+  - field: SubjectUserName
+    not_ends_with: "$"
+    not_empty: true
+    not_in:
+      - SYSTEM
+      - LOCAL SERVICE
+      - NETWORK SERVICE
+      - TRUSTED INSTALLER

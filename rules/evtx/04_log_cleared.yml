@@ -1,0 +1,9 @@
+---
+title: Security Log Cleared
+event_id: "1102"
+description: Security audit log cleared - attacker covering tracks
+conditions: []
+severity: critical
+confidence: 0.95
+technique: T1562
+mitre: Defense Evasion

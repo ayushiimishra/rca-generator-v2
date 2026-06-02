@@ -1,0 +1,9 @@
+---
+title: PowerShell Script Block Logged
+event_id: "4104"
+description: PowerShell script block captured
+conditions: []
+severity: high
+confidence: 0.8
+technique: T1059
+mitre: Execution

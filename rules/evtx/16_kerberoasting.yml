@@ -1,0 +1,26 @@
+---
+title: Kerberoasting Service Ticket Request
+event_id: "4769"
+description: >
+  Kerberos service ticket requested using RC4 encryption (0x17/23).
+  Modern environments use AES (0x12/0x11). An RC4 TGS request for a
+  non-machine service account is the canonical Kerberoasting fingerprint —
+  the attacker requests a ticket to crack offline.
+  Requires: "Audit Kerberos Service Ticket Operations" policy enabled.
+severity: high
+confidence: 0.82
+technique: T1558.003
+mitre: Credential Access
+conditions:
+  - field: TicketEncryptionType
+    equals_any:
+      - "0x17"
+      - "23"
+      - "0x18"
+      - "24"
+  - field: TargetUserName
+    not_ends_with: "$"
+    not_empty: true
+    not_in:
+      - krbtgt
+      - ANONYMOUS LOGON

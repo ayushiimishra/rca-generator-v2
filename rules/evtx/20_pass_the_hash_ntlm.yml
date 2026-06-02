@@ -1,0 +1,28 @@
+---
+title: Pass the Hash Attack
+event_id: "4624"
+description: >
+  NTLM network logon by a named user account that is not
+  interactive (not type 2/10) and not using Kerberos or
+  Negotiate. This pattern indicates lateral movement via
+  stolen NTLM hash (Pass-the-Hash / Pass-the-Ticket).
+severity: high
+confidence: 0.80
+technique: T1550.002
+mitre: Lateral Movement
+conditions:
+  - field: LogonType
+    not_in:
+      - "10"
+      - "2"
+  - field: AuthenticationPackageName
+    not_in:
+      - Kerberos
+      - Negotiate
+  - field: SubjectUserName
+    not_ends_with: "$"
+    not_empty: true
+    not_in:
+      - SYSTEM
+      - LOCAL SERVICE
+      - NETWORK SERVICE

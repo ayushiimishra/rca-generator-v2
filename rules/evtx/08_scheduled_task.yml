@@ -1,0 +1,15 @@
+---
+title: Scheduled Task Created By User
+event_id: "4698"
+description: Scheduled task created - persistence mechanism
+conditions:
+  - field: SubjectUserName
+    not_in:
+      - SYSTEM
+      - LOCAL SERVICE
+    not_ends_with: "$"
+    not_empty: true
+severity: high
+confidence: 0.75
+technique: T1053
+mitre: Persistence

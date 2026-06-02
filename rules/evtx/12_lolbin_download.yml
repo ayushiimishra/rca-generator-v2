@@ -1,0 +1,27 @@
+---
+title: LOLBin Download or Remote Execution
+event_id: "4688"
+event_ids: ["4688", "1"]
+description: >
+  Living-off-the-Land binary executing a download or remote code
+  pattern. certutil -urlcache, bitsadmin /transfer, and mshta/wscript
+  with HTTP/VBScript are reliable attacker fingerprints.
+  Fires from any account including SYSTEM.
+severity: high
+confidence: 0.85
+technique: T1218
+mitre: Defense Evasion
+conditions:
+  - field: CommandLine
+    contains_any:
+      - "-urlcache"
+      - "urlcache"
+      - "bitsadmin /transfer"
+      - "bitsadmin.exe /transfer"
+      - "mshta http"
+      - "mshta vbscript"
+      - "mshta javascript"
+      - "installutil /logfile"
+      - "odbcconf /a"
+      - "regsvcs http"
+      - "regasm http"

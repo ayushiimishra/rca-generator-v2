@@ -1,0 +1,22 @@
+---
+title: Shadow Copy Deletion Attempt
+event_id: "4688"
+event_ids: ["4688", "1"]
+description: >
+  vssadmin, wmic, or wbadmin used to delete shadow copies.
+  This is a definitive ransomware pre-cursor and defense evasion
+  technique. SYSTEM is a common caller — never suppress.
+severity: critical
+confidence: 0.97
+technique: T1490
+mitre: Impact
+conditions:
+  - field: CommandLine
+    contains_any:
+      - "delete shadows"
+      - "resize shadowstorage"
+      - "shadowcopy delete"
+      - "shadowcopy where"
+      - "wbadmin delete"
+      - "delete catalog"
+      - "delete backup"

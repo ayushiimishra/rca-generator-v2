@@ -1,0 +1,20 @@
+---
+title: Brute Force Login Attempt
+event_id: "4625"
+description: Multiple failed logins from real user account
+conditions:
+  - field: SubjectUserName
+    not_in:
+      - SYSTEM
+      - LOCAL SERVICE
+      - NETWORK SERVICE
+      - ANONYMOUS LOGON
+    not_ends_with: "$"
+    not_empty: true
+  - field: count_in_window
+    greater_than: 10
+    window_seconds: 300
+severity: high
+confidence: 0.9
+technique: T1110
+mitre: Credential Access

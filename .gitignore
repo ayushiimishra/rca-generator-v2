@@ -1,0 +1,13 @@
+.venv/
+__pycache__/
+*.pyc
+uploads/
+rca_memory/
+*.evtx
+*.log
+*.json
+.env
+sigma-rules/
+chainsaw/
+chainsaw_x86_64-unknown-linux-gnu.tar.gz
+rca-generator/

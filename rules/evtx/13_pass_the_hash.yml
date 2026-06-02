@@ -1,0 +1,25 @@
+---
+title: Pass-the-Hash Lateral Movement
+event_id: "4624"
+description: >
+  Successful network logon (Type 3) using NTLM authentication by a
+  non-machine account. This is the canonical Pass-the-Hash fingerprint.
+  Machine accounts ($) and ANONYMOUS LOGON are excluded.
+  Requires audit logon success policy enabled.
+severity: high
+confidence: 0.80
+technique: T1550.002
+mitre: Lateral Movement
+conditions:
+  - field: LogonType
+    equals: "3"
+  - field: AuthenticationPackageName
+    equals: "NTLM"
+  - field: TargetUserName
+    not_ends_with: "$"
+    not_empty: true
+    not_in:
+      - ANONYMOUS LOGON
+      - LOCAL SERVICE
+      - NETWORK SERVICE
+      - SYSTEM

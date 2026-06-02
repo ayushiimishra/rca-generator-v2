@@ -1,0 +1,25 @@
+---
+title: Service Installed from Writable User Path
+event_id: "7045"
+description: >
+  A Windows service was installed with an executable from a
+  user-writable directory (AppData, Temp, Downloads, ProgramData,
+  Public). Legitimate software never installs services here.
+  This fires from ANY account including SYSTEM — covering the case
+  where malware installs its own service via an elevated dropper.
+severity: critical
+confidence: 0.92
+technique: T1543.003
+mitre: Persistence
+conditions:
+  - field: ServiceFileName
+    contains_any:
+      - "\\appdata\\"
+      - "\\temp\\"
+      - "\\tmp\\"
+      - "\\users\\public\\"
+      - "\\downloads\\"
+      - "\\desktop\\"
+      - "c:\\programdata\\"
+      - "c:\\windows\\temp\\"
+      - "c:\\$recycle.bin\\"

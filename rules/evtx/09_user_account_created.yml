@@ -1,0 +1,14 @@
+---
+title: New User Account Created
+event_id: "4720"
+description: New user account - possible backdoor account
+conditions:
+  - field: SubjectUserName
+    not_in:
+      - SYSTEM
+    not_ends_with: "$"
+    not_empty: true
+severity: high
+confidence: 0.85
+technique: T1136
+mitre: Persistence

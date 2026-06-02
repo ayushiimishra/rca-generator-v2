@@ -1,0 +1,12 @@
+---
+title: Suspicious Process Chain Detected
+event_id: "4688"
+event_ids: ["4688", "1"]
+description: Office app spawning shell - classic malware pattern
+conditions:
+  - field: suspicious_chain
+    not_empty: true
+severity: critical
+confidence: 0.95
+technique: T1055
+mitre: Defense Evasion

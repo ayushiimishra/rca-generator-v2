@@ -1,0 +1,1579 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI RCA Generator</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
+<style>
+* { margin:0; padding:0; box-sizing:border-box; }
+body {
+  font-family: 'Segoe UI', system-ui, sans-serif;
+  background: #080b14;
+  color: #e2e8f0;
+  min-height: 100vh;
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+.header {
+  background: #0d1117;
+  border-bottom: 1px solid #21262d;
+  padding: 16px 48px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.header-brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.header-logo {
+  width: 32px; height: 32px;
+  background: #1d6ae5;
+  border-radius: 6px;
+  display: flex; align-items: center;
+  justify-content: center;
+  font-size: 14px;
+}
+.header h1 {
+  font-size: 15px;
+  font-weight: 600;
+  color: #f0f6fc;
+  letter-spacing: -0.2px;
+}
+.header-sub {
+  font-size: 12px;
+  color: #8b949e;
+}
+
+.container {
+  max-width: 920px;
+  margin: 0 auto;
+  padding: 40px 24px;
+}
+
+.upload-card {
+  background: #0d1117;
+  border: 1px solid #21262d;
+  border-radius: 10px;
+  padding: 28px;
+  margin-bottom: 20px;
+}
+.upload-card-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: #8b949e;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  margin-bottom: 20px;
+}
+.upload-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+.upload-box {
+  border: 1px dashed #30363d;
+  border-radius: 8px;
+  padding: 20px;
+  text-align: center;
+  cursor: pointer;
+  transition: all .2s;
+  position: relative;
+}
+.upload-box:hover {
+  border-color: #1d6ae5;
+  background: rgba(29,106,229,.04);
+}
+.upload-box.has-file {
+  border-color: #238636;
+  background: rgba(35,134,54,.04);
+}
+.upload-box input {
+  position: absolute; inset: 0;
+  opacity: 0; cursor: pointer;
+  width: 100%; height: 100%;
+}
+.upload-icon { font-size: 22px; margin-bottom: 8px; }
+.upload-label {
+  font-size: 13px; font-weight: 600;
+  color: #e6edf3; margin-bottom: 3px;
+}
+.upload-hint { font-size: 11px; color: #8b949e; }
+.upload-fname {
+  font-size: 11px; color: #3fb950;
+  margin-top: 6px; font-weight: 500;
+}
+
+.btn-primary {
+  width: 100%; padding: 11px;
+  background: #1d6ae5;
+  border: none; border-radius: 8px;
+  color: #fff; font-size: 14px;
+  font-weight: 600; cursor: pointer;
+  transition: background .2s;
+}
+.btn-primary:hover { background: #1a5ecc; }
+.btn-primary:disabled { opacity: .35; cursor: not-allowed; }
+
+.btn-secondary {
+  display: inline-flex; align-items: center;
+  gap: 6px; padding: 8px 16px;
+  background: transparent;
+  border: 1px solid #30363d;
+  border-radius: 6px;
+  color: #c9d1d9; font-size: 12px;
+  cursor: pointer; transition: all .2s;
+}
+.btn-secondary:hover {
+  background: #161b22;
+  border-color: #8b949e;
+}
+
+.progress-card {
+  background: #0d1117;
+  border: 1px solid #21262d;
+  border-radius: 10px;
+  padding: 28px;
+  margin-bottom: 20px;
+}
+.progress-bar-wrap {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+.progress-bar-label {
+  font-size: 13px; font-weight: 600;
+  color: #e6edf3;
+}
+.progress-bar-pct {
+  font-size: 13px; color: #1d6ae5;
+  font-weight: 600;
+}
+.progress-track {
+  background: #21262d;
+  border-radius: 4px; height: 5px;
+  overflow: hidden; margin-bottom: 10px;
+}
+.progress-fill {
+  height: 100%; background: #1d6ae5;
+  border-radius: 4px;
+  transition: width .5s ease; width: 0%;
+}
+.progress-status {
+  font-size: 12px; color: #8b949e;
+  margin-bottom: 20px;
+}
+.steps {
+  display: flex; flex-direction: column;
+  gap: 7px;
+}
+.step {
+  display: flex; align-items: center;
+  gap: 10px; font-size: 12px;
+  color: #30363d;
+}
+.step.done   { color: #3fb950; }
+.step.active { color: #1d6ae5; }
+.step-dot {
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: #21262d; flex-shrink: 0;
+}
+.step.done   .step-dot { background: #3fb950; }
+.step.active .step-dot {
+  background: #1d6ae5;
+  animation: pulse 1s infinite;
+}
+@keyframes pulse {
+  0%,100%{opacity:1} 50%{opacity:.3}
+}
+.hidden { display: none !important; }
+.error-notice {
+  color: #f85149; font-size: 13px;
+  margin-top: 10px; padding: 10px 14px;
+  background: rgba(248,81,73,.08);
+  border: 1px solid rgba(248,81,73,.15);
+  border-radius: 6px;
+}
+
+.report-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.report-header {
+  background: #0d1117;
+  border: 1px solid #21262d;
+  border-radius: 10px 10px 0 0;
+  border-bottom: none;
+  padding: 32px 36px 24px;
+}
+.report-header-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 24px;
+}
+.report-classification {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  color: #8b949e;
+  text-transform: uppercase;
+  border: 1px solid #30363d;
+  padding: 3px 10px;
+  border-radius: 3px;
+}
+.report-severity-block {
+  text-align: right;
+}
+.report-severity-label {
+  font-size: 10px; color: #8b949e;
+  text-transform: uppercase;
+  letter-spacing: .6px;
+  margin-bottom: 4px;
+}
+.report-severity-value {
+  font-size: 18px; font-weight: 700;
+}
+.sev-CRITICAL { color: #f85149; }
+.sev-HIGH     { color: #e3b341; }
+.sev-MEDIUM   { color: #d29922; }
+.sev-LOW      { color: #3fb950; }
+
+.report-title {
+  font-size: 26px;
+  font-weight: 700;
+  color: #f0f6fc;
+  letter-spacing: -0.5px;
+  margin-bottom: 6px;
+}
+.report-subtitle {
+  font-size: 14px;
+  color: #8b949e;
+  margin-bottom: 20px;
+}
+.report-meta-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0;
+  border: 1px solid #21262d;
+  border-radius: 6px;
+  overflow: hidden;
+}
+.report-meta-cell {
+  padding: 12px 16px;
+  border-right: 1px solid #21262d;
+}
+.report-meta-cell:last-child {
+  border-right: none;
+}
+.report-meta-key {
+  font-size: 10px; color: #8b949e;
+  text-transform: uppercase;
+  letter-spacing: .5px;
+  margin-bottom: 4px;
+}
+.report-meta-val {
+  font-size: 12px; color: #e6edf3;
+  font-weight: 500;
+  font-family: 'Consolas', monospace;
+}
+
+.report-body {
+  background: #0d1117;
+  border: 1px solid #21262d;
+  border-top: none;
+  border-bottom: none;
+}
+
+.report-section {
+  padding: 28px 36px;
+  border-bottom: 1px solid #21262d;
+}
+.report-section:last-child {
+  border-bottom: none;
+}
+.section-heading {
+  font-size: 11px;
+  font-weight: 700;
+  color: #8b949e;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-bottom: 16px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.section-heading::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: #21262d;
+}
+.section-number {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px; height: 20px;
+  background: #161b22;
+  border: 1px solid #30363d;
+  border-radius: 4px;
+  font-size: 10px;
+  color: #8b949e;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.status-indicators {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+  margin-bottom: 0;
+}
+.status-indicator {
+  padding: 16px 20px;
+  background: #161b22;
+  border: 1px solid #21262d;
+  border-radius: 8px;
+}
+.si-label {
+  font-size: 10px; color: #8b949e;
+  text-transform: uppercase;
+  letter-spacing: .6px;
+  margin-bottom: 6px;
+}
+.si-value {
+  font-size: 18px; font-weight: 700;
+  margin-bottom: 3px;
+}
+.si-sub { font-size: 11px; color: #8b949e; }
+
+.summary-text {
+  font-size: 14px;
+  line-height: 1.8;
+  color: #c9d1d9;
+}
+
+.finding-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  padding: 14px 0;
+  border-bottom: 1px solid #161b22;
+}
+.finding-row:last-child { border-bottom: none; }
+.finding-num {
+  font-size: 11px; color: #8b949e;
+  font-weight: 700; min-width: 24px;
+  padding-top: 2px;
+  font-family: monospace;
+}
+.finding-body { flex: 1; }
+.finding-title {
+  font-size: 13px; font-weight: 600;
+  color: #e6edf3; margin-bottom: 3px;
+}
+.finding-meta {
+  font-size: 11px; color: #8b949e;
+  display: flex; gap: 14px;
+  flex-wrap: wrap;
+}
+.finding-meta span { display: flex; gap: 4px; }
+.finding-right {
+  display: flex; flex-direction: column;
+  align-items: flex-end; gap: 4px;
+  flex-shrink: 0;
+}
+.severity-indicator {
+  font-size: 11px; font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .5px;
+}
+.conf-text {
+  font-size: 11px; color: #8b949e;
+  font-family: monospace;
+}
+
+.timeline-entry {
+  display: flex;
+  gap: 20px;
+  padding: 10px 0;
+}
+.tl-time-col {
+  width: 140px; flex-shrink: 0;
+  font-size: 11px;
+  color: #8b949e;
+  font-family: monospace;
+  padding-top: 2px;
+}
+.tl-marker-col {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  flex-shrink: 0;
+  width: 16px;
+}
+.tl-dot {
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0; margin-top: 3px;
+}
+.tl-line {
+  width: 1px; flex: 1;
+  background: #21262d;
+  margin-top: 3px;
+}
+.tl-content { flex: 1; padding-bottom: 8px; }
+.tl-event-id {
+  font-size: 12px; font-weight: 600;
+  color: #e6edf3; font-family: monospace;
+  margin-bottom: 2px;
+}
+.tl-detail {
+  font-size: 11px; color: #8b949e;
+}
+
+.intel-cols {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 32px;
+}
+.intel-col-title {
+  font-size: 11px; font-weight: 600;
+  color: #8b949e; text-transform: uppercase;
+  letter-spacing: .6px; margin-bottom: 12px;
+}
+.mitre-entry {
+  padding: 10px 14px;
+  background: #161b22;
+  border: 1px solid #21262d;
+  border-left: 2px solid #1d6ae5;
+  border-radius: 0 6px 6px 0;
+  margin-bottom: 6px;
+}
+.mitre-tid {
+  font-size: 12px; font-weight: 700;
+  color: #79c0ff; font-family: monospace;
+  margin-bottom: 2px;
+}
+.mitre-tname { font-size: 12px; color: #c9d1d9; }
+
+.ioc-entry {
+  display: flex; align-items: flex-start;
+  gap: 12px; padding: 10px 0;
+  border-bottom: 1px solid #161b22;
+}
+.ioc-entry:last-child { border-bottom: none; }
+.ioc-type-label {
+  font-size: 10px; font-weight: 700;
+  color: #8b949e; text-transform: uppercase;
+  letter-spacing: .4px; min-width: 48px;
+  padding-top: 2px;
+}
+.ioc-val {
+  font-family: monospace; font-size: 12px;
+  color: #e6edf3; flex: 1;
+  word-break: break-all;
+}
+.ioc-confidence {
+  font-size: 10px; font-weight: 700;
+  text-transform: uppercase;
+}
+
+.rca-finding-blocks {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 12px; margin-bottom: 20px;
+}
+.rca-block {
+  padding: 16px;
+  background: #161b22;
+  border: 1px solid #21262d;
+  border-radius: 6px;
+}
+.rca-block-label {
+  font-size: 10px; color: #8b949e;
+  text-transform: uppercase;
+  letter-spacing: .5px; margin-bottom: 8px;
+}
+.rca-block-text {
+  font-size: 12px; color: #c9d1d9;
+  line-height: 1.6;
+}
+
+.evidence-gap-item {
+  display: flex; gap: 10px;
+  padding: 8px 0;
+  font-size: 12px; color: #c9d1d9;
+  border-bottom: 1px solid #161b22;
+}
+.evidence-gap-item:last-child { border-bottom: none; }
+.gap-bullet { color: #e3b341; flex-shrink: 0; }
+
+.remediation-cols {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 24px;
+}
+.rem-phase-title {
+  font-size: 11px; font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .6px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid #21262d;
+  margin-bottom: 14px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.rem-step {
+  display: flex; gap: 10px;
+  margin-bottom: 10px;
+  font-size: 12px; color: #c9d1d9;
+  line-height: 1.6;
+}
+.rem-step-num {
+  flex-shrink: 0;
+  font-size: 10px; font-weight: 700;
+  color: #8b949e; font-family: monospace;
+  padding-top: 2px;
+  min-width: 16px;
+}
+
+.report-footer-bar {
+  background: #0d1117;
+  border: 1px solid #21262d;
+  border-top: none;
+  border-radius: 0 0 10px 10px;
+  padding: 16px 36px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+.footer-text {
+  font-size: 11px; color: #8b949e;
+}
+.footer-text span {
+  color: #c9d1d9;
+  font-family: monospace;
+}
+.footer-btns { display: flex; gap: 8px; }
+
+/* Upload/progress section compatibility */
+.card { background:#0d1117; border:1px solid #21262d; border-radius:10px; padding:28px; margin-bottom:20px; }
+.card-title { font-size:13px; font-weight:600; color:#8b949e; text-transform:uppercase; letter-spacing:.6px; margin-bottom:20px; }
+.btn-analyze { width:100%; padding:11px; background:#1d6ae5; border:none; border-radius:8px; color:#fff; font-size:14px; font-weight:600; cursor:pointer; transition:background .2s; }
+.btn-analyze:hover { background:#1a5ecc; }
+.btn-analyze:disabled { opacity:.35; cursor:not-allowed; }
+.progress-header { display:flex; justify-content:space-between; margin-bottom:8px; }
+.progress-label { font-size:13px; font-weight:600; color:#e6edf3; }
+.progress-pct { font-size:13px; color:#1d6ae5; font-weight:600; }
+.progress-bar-bg { background:#21262d; border-radius:4px; height:5px; overflow:hidden; margin-bottom:10px; }
+.progress-bar-fill { height:100%; background:#1d6ae5; border-radius:4px; transition:width .5s ease; width:0%; }
+.progress-msg { font-size:12px; color:#8b949e; margin-bottom:20px; }
+.error-msg { color:#f85149; font-size:13px; margin-top:10px; padding:10px 14px; background:rgba(248,81,73,.08); border:1px solid rgba(248,81,73,.15); border-radius:6px; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="logo">🛡️</div>
+  <div>
+    <h1>AI RCA Generator</h1>
+    <p>Automated Root Cause Analysis for Security Incidents</p>
+  </div>
+</div>
+
+<div class="container">
+
+  <!-- UPLOAD -->
+  <div class="card" id="uploadSection">
+    <div class="card-title">Upload Log Files</div>
+    <div class="upload-grid">
+      <div class="upload-box" id="evtxBox">
+        <input type="file" id="evtxFile" accept=".evtx"
+               multiple
+               onchange="fileSelected('evtx')">
+        <div class="upload-icon">🪟</div>
+        <div class="upload-label">Windows Event Log</div>
+        <div class="upload-hint">.evtx · multiple files ok</div>
+        <div class="upload-fname hidden" id="evtxName"></div>
+      </div>
+      <div class="upload-box" id="wafBox">
+        <input type="file" id="wafFile" accept=".log,.txt"
+               multiple
+               onchange="fileSelected('waf')">
+        <div class="upload-icon">🌐</div>
+        <div class="upload-label">Web Access Log</div>
+        <div class="upload-hint">.log · multiple files ok</div>
+        <div class="upload-fname hidden" id="wafName"></div>
+      </div>
+    </div>
+    <button class="btn-analyze" id="analyzeBtn"
+            onclick="startAnalysis()" disabled>
+      Analyze Logs
+    </button>
+    <div class="error-msg hidden" id="errorMsg"></div>
+  </div>
+
+  <!-- PROGRESS -->
+  <div class="card hidden" id="progressSection">
+    <div class="progress-header">
+      <span class="progress-label">Analyzing...</span>
+      <span class="progress-pct" id="progressPct">0%</span>
+    </div>
+    <div class="progress-bar-bg">
+      <div class="progress-bar-fill" id="progressFill"></div>
+    </div>
+    <div class="progress-msg" id="progressMsg">Starting...</div>
+    <div class="steps">
+      <div class="step" id="step1">
+        <div class="step-dot"></div>Parsing log files
+      </div>
+      <div class="step" id="step2">
+        <div class="step-dot"></div>Detecting threats
+      </div>
+      <div class="step" id="step3">
+        <div class="step-dot"></div>Correlating attack patterns
+      </div>
+      <div class="step" id="step4">
+        <div class="step-dot"></div>Generating AI analysis
+      </div>
+    </div>
+  </div>
+
+  <!-- RESULTS -->
+  <div id="reportSection" class="hidden">
+    <div class="report-wrap">
+      <div class="report-header" id="reportHeader"></div>
+      <div class="report-body" id="reportBody"></div>
+      <div class="report-footer-bar" id="reportFooterBar"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+let currentReport = null;
+let pollInterval  = null;
+let sessionId     = null;
+
+function fileSelected(type) {
+  const input = document.getElementById(
+    type === 'evtx' ? 'evtxFile' : 'wafFile'
+  );
+  const box   = document.getElementById(
+    type === 'evtx' ? 'evtxBox' : 'wafBox'
+  );
+  const name  = document.getElementById(
+    type === 'evtx' ? 'evtxName' : 'wafName'
+  );
+  if (input.files.length > 0) {
+    box.classList.add('has-file');
+    if (input.files.length === 1) {
+      name.textContent = input.files[0].name;
+    } else {
+      name.textContent =
+        input.files.length + ' files selected';
+    }
+    name.classList.remove('hidden');
+  }
+  updateAnalyzeBtn();
+}
+
+function updateAnalyzeBtn() {
+  const evtx =
+    document.getElementById('evtxFile').files.length;
+  const waf  =
+    document.getElementById('wafFile').files.length;
+  document.getElementById('analyzeBtn').disabled =
+    !evtx && !waf;
+}
+
+function setStep(n) {
+  for (let i = 1; i <= 4; i++) {
+    const el = document.getElementById('step' + i);
+    el.className = 'step' + (i < n ? ' done' : i === n ? ' active' : '');
+  }
+}
+
+function updateProgress(pct, msg) {
+  document.getElementById('progressFill').style.width = pct + '%';
+  document.getElementById('progressPct').textContent  = pct + '%';
+  document.getElementById('progressMsg').textContent  = msg;
+  if (pct < 30)      setStep(1);
+  else if (pct < 60) setStep(2);
+  else if (pct < 85) setStep(3);
+  else               setStep(4);
+}
+
+async function startAnalysis() {
+  const evtx = document.getElementById('evtxFile').files[0];
+  const waf  = document.getElementById('wafFile').files[0];
+
+  document.getElementById('errorMsg').classList.add('hidden');
+  document.getElementById('uploadSection').classList.add('hidden');
+  document.getElementById('progressSection').classList.remove('hidden');
+  document.getElementById('reportSection').classList.add('hidden');
+  updateProgress(5, 'Uploading files...');
+
+  const evtxInput =
+    document.getElementById('evtxFile');
+  const wafInput  =
+    document.getElementById('wafFile');
+  const fd = new FormData();
+  for (const f of evtxInput.files) {
+    fd.append('evtx_files', f);
+  }
+  for (const f of wafInput.files) {
+    fd.append('waf_files', f);
+  }
+
+  try {
+    const res  = await fetch('/api/analyze', {
+      method: 'POST', body: fd
+    });
+    const data = await res.json();
+    if (data.error) throw new Error(data.error);
+    sessionId = data.session_id;
+    pollInterval = setInterval(pollStatus, 2000);
+  } catch (err) {
+    showError(err.message);
+  }
+}
+
+async function pollStatus() {
+  try {
+    const res  = await fetch('/api/status/' + sessionId);
+    const data = await res.json();
+    updateProgress(data.progress || 0, data.message || '');
+    if (data.status === 'complete') {
+      clearInterval(pollInterval);
+      setStep(5);
+      updateProgress(100, 'Analysis complete');
+      setTimeout(fetchReport, 500);
+    } else if (data.status === 'error') {
+      clearInterval(pollInterval);
+      showError(data.error || 'Analysis failed');
+    }
+  } catch (err) {
+    clearInterval(pollInterval);
+    showError('Connection lost');
+  }
+}
+
+async function fetchReport() {
+  try {
+    const res    = await fetch('/api/report/' + sessionId);
+    const report = await res.json();
+    if (report && report.error && !report.summary && !report.severity_overall) {
+      showError('Pipeline error: ' + report.error);
+      return;
+    }
+    currentReport = report;
+    renderReport(report);
+    document.getElementById('progressSection').classList.add('hidden');
+    document.getElementById('reportSection').classList.remove('hidden');
+  } catch (err) {
+    console.error('[fetchReport] crash:', err);
+    showError('Failed to render report: ' + (err.message || err));
+  }
+}
+
+function renderReport(r) {
+  const sev = (r.severity_overall||'MEDIUM').toUpperCase();
+  const affectedAccounts = r.affected_accounts || [];
+  const affectedSystems  = r.affected_systems  || [];
+
+  document.getElementById('reportHeader').innerHTML = `
+    <div class="report-header-top">
+      <div class="report-classification">Confidential — Security Incident Report</div>
+      <div class="report-severity-block">
+        <div class="report-severity-label">Overall Severity</div>
+        <div class="report-severity-value sev-${sev}">${sev}</div>
+      </div>
+    </div>
+    <div class="report-title">Security Incident Analysis</div>
+    <div class="report-subtitle">Automated Root Cause Analysis — ${(r.generated_at||'').slice(0,10)}</div>
+    <div class="report-meta-grid">
+      <div class="report-meta-cell">
+        <div class="report-meta-key">Incident ID</div>
+        <div class="report-meta-val">${r.session_id||'—'}</div>
+      </div>
+      <div class="report-meta-cell">
+        <div class="report-meta-key">Generated</div>
+        <div class="report-meta-val">${(r.generated_at||'').slice(0,16).replace('T',' ')} UTC</div>
+      </div>
+      <div class="report-meta-cell">
+        <div class="report-meta-key">Confidence</div>
+        <div class="report-meta-val">${r.confidence_level||'—'}</div>
+      </div>
+      <div class="report-meta-cell">
+        <div class="report-meta-key">Analysis Engine</div>
+        <div class="report-meta-val">${r.model||'—'}</div>
+      </div>
+    </div>`;
+
+  const gaps = (r.evidence_gaps||[]).length;
+  const sevColors = {
+    CRITICAL:'#f85149',HIGH:'#e3b341',
+    MEDIUM:'#d29922',LOW:'#3fb950'
+  };
+  const sc = sevColors[sev]||'#8b949e';
+
+  let body = '';
+
+  const acctList = affectedAccounts.length
+    ? affectedAccounts.map(a=>`<code style="font-size:10px;color:#79c0ff">${a}</code>`).join(', ')
+    : '<span style="color:#3fb950">None identified</span>';
+  const sysList = affectedSystems.length
+    ? affectedSystems.map(s=>`<code style="font-size:10px;color:#79c0ff">${s}</code>`).join(', ')
+    : '<span style="color:#3fb950">None identified</span>';
+
+  body += `<div class="report-section">
+    <div class="section-heading">
+      <span class="section-number">01</span>
+      Incident Status
+    </div>
+    <div class="status-indicators" style="grid-template-columns:repeat(4,1fr)">
+      <div class="status-indicator">
+        <div class="si-label">Attack Confirmed</div>
+        <div class="si-value" style="color:${r.attack_confirmed?'#f85149':'#3fb950'}">${r.attack_confirmed?'YES':'NO'}</div>
+        <div class="si-sub">${r.attack_confirmed?'Malicious activity confirmed':'No confirmed attack activity'}</div>
+      </div>
+      <div class="status-indicator">
+        <div class="si-label">Attack Phase</div>
+        <div class="si-value" style="font-size:13px;color:#79c0ff">${r.attack_phase||'Unknown'}</div>
+        <div class="si-sub">Highest kill chain stage</div>
+      </div>
+      <div class="status-indicator">
+        <div class="si-label">Affected Accounts</div>
+        <div class="si-value" style="color:${affectedAccounts.length?'#e3b341':'#3fb950'}">${affectedAccounts.length||0}</div>
+        <div class="si-sub" style="word-break:break-word;line-height:1.4">${acctList}</div>
+      </div>
+      <div class="status-indicator">
+        <div class="si-label">Affected Systems</div>
+        <div class="si-value" style="color:${affectedSystems.length?'#e3b341':'#3fb950'}">${affectedSystems.length||0}</div>
+        <div class="si-sub" style="word-break:break-word;line-height:1.4">${sysList}</div>
+      </div>
+    </div>
+  </div>`;
+
+  body += `<div class="report-section">
+    <div class="section-heading">
+      <span class="section-number">02</span>
+      Executive Summary
+    </div>
+    <div class="summary-text">${r.executive_summary||r.summary||'No summary available.'}</div>
+  </div>`;
+
+  if (r.attack_narrative && typeof r.attack_narrative === 'string' && r.attack_narrative.trim()) {
+    const steps = r.attack_narrative.split('\n').filter(s => s.trim());
+    let narrativeHtml = '';
+    steps.forEach(step => {
+      const dashIdx = step.indexOf(' - ');
+      if (dashIdx > 0) {
+        const ts   = step.slice(0, dashIdx).trim();
+        const desc = step.slice(dashIdx + 3).trim();
+        narrativeHtml += `<div style="display:flex;gap:12px;padding:7px 0;font-size:12px;color:#c9d1d9;border-bottom:1px solid #161b22">
+          <span style="font-family:monospace;color:#8b949e;flex-shrink:0;min-width:160px;padding-top:1px">${ts}</span>
+          <span>${desc}</span>
+        </div>`;
+      } else {
+        narrativeHtml += `<div style="padding:7px 0;font-size:12px;color:#c9d1d9;border-bottom:1px solid #161b22">${step}</div>`;
+      }
+    });
+    body += `<div class="report-section">
+      <div class="section-heading">
+        <span class="section-number">02b</span>
+        Attack Narrative
+      </div>
+      ${narrativeHtml}
+    </div>`;
+  }
+
+  const hits = (r.detection_hits||[]);
+  const sevOrder = {critical:0,high:1,medium:2,low:3,info:4};
+  hits.sort((a,b)=>(sevOrder[(a.severity||'info').toLowerCase()]||4)-(sevOrder[(b.severity||'info').toLowerCase()]||4));
+  const sevCol = {CRITICAL:'#f85149',HIGH:'#e3b341',MEDIUM:'#d29922',LOW:'#8b949e',INFO:'#79c0ff'};
+  let findingsHtml = '';
+  if (hits.length) {
+    hits.forEach((h,i) => {
+      const s = (h.severity||'low').toUpperCase();
+      const src = h.source==='scenario_engine'?'Behavioral Correlation':h.source==='sigma_lite'?'Custom Detection Rule':'Community Sigma Rule';
+      const conf = h.confidence ? Math.round(h.confidence*100)+'%' : '—';
+      const sys = (h.systems||[]).filter(x=>x&&x!=='unknown').join(', ')||'—';
+      findingsHtml += `<div class="finding-row">
+        <div class="finding-num">F${String(i+1).padStart(2,'0')}</div>
+        <div class="finding-body">
+          <div class="finding-title">${h.rule_name||'Unknown Rule'}</div>
+          <div class="finding-meta">
+            <span>Source: ${src}</span>
+            <span>Technique: ${h.technique||'—'}</span>
+            <span>Count: ${h.count||0} event(s)</span>
+            <span>Systems: <span style="font-family:monospace">${sys}</span></span>
+          </div>
+        </div>
+        <div class="finding-right">
+          <div class="severity-indicator" style="color:${sevCol[s]||'#8b949e'}">${s}</div>
+          <div class="conf-text">${conf} confidence</div>
+        </div>
+      </div>`;
+    });
+  } else {
+    findingsHtml = '<div style="color:#8b949e;font-size:13px;font-style:italic">No detection rule matches. Log may represent clean activity.</div>';
+  }
+  body += `<div class="report-section">
+    <div class="section-heading">
+      <span class="section-number">03</span>
+      Detection Findings
+    </div>${findingsHtml}</div>`;
+
+  const tl = (r.event_timeline||[]);
+  tl.sort((a,b)=>{
+    const sd=(sevOrder[(a.severity||'info').toLowerCase()]||4)-(sevOrder[(b.severity||'info').toLowerCase()]||4);
+    return sd!==0?sd:(a.first_seen||'').localeCompare(b.first_seen||'');
+  });
+  const dotCol = {critical:'#f85149',high:'#e3b341',medium:'#d29922',low:'#8b949e',info:'#79c0ff'};
+  let tlHtml = '';
+  if (tl.length) {
+    tl.forEach((e,idx) => {
+      const eid = (e.pattern||'').match(/EID=(\w+)/);
+      const ch  = (e.pattern||'').match(/CHANNEL=(\w+)/);
+      const dc  = dotCol[(e.severity||'low').toLowerCase()]||'#8b949e';
+      const sys = (e.systems||[]).filter(x=>x&&x!=='unknown').join(', ');
+      tlHtml += `<div class="timeline-entry">
+        <div class="tl-time-col">${(e.first_seen||'').slice(0,19).replace('T',' ')}</div>
+        <div class="tl-marker-col">
+          <div class="tl-dot" style="background:${dc}"></div>
+          ${idx<tl.length-1?'<div class="tl-line"></div>':''}
+        </div>
+        <div class="tl-content">
+          <div class="tl-event-id">${eid?'EID='+eid[1]:e.pattern} ${ch?'· '+ch[1]:''} · ${(e.severity||'').toUpperCase()} · ${e.count||0}x${e.is_anomalous?' · ANOMALOUS':''}</div>
+          <div class="tl-detail">${sys||'System unknown'}${e.last_seen&&e.last_seen!==e.first_seen?' · Last: '+(e.last_seen||'').slice(0,19).replace('T',' '):''}</div>
+        </div>
+      </div>`;
+    });
+  } else {
+    tlHtml = '<div style="color:#8b949e;font-size:13px;font-style:italic">No timeline data available.</div>';
+  }
+  body += `<div class="report-section">
+    <div class="section-heading">
+      <span class="section-number">04</span>
+      Event Timeline
+    </div>${tlHtml}</div>`;
+
+  let mitrHtml = '';
+  (r.mitre_attack||[]).forEach(m => {
+    if (!m) return;
+    const isObj = typeof m === 'object';
+    const isStr = typeof m === 'string';
+    const tid   = isObj ? (m.technique_id||'') : (isStr ? (m.split(' - ')[0]||m) : String(m));
+    const tname = isObj ? (m.technique_name||'Unknown') : (isStr ? (m.split(' - ').slice(1).join(' - ')||'Unknown Technique') : '');
+    const tevid = isObj ? (m.evidence||'') : '';
+    mitrHtml += `<div class="mitre-entry">
+      <div class="mitre-tid">${tid}</div>
+      <div class="mitre-tname">${tname}</div>
+      ${tevid ? `<div style="font-size:10px;color:#8b949e;margin-top:4px;font-style:italic">${tevid}</div>` : ''}
+    </div>`;
+  });
+  if (!mitrHtml) mitrHtml = '<div style="color:#8b949e;font-size:12px;font-style:italic">No MITRE techniques identified.</div>';
+
+  let iocHtml = '';
+  (r.ioc_list||[]).forEach(ioc => {
+    const cc = ioc.confidence==='HIGH'?'#f85149':ioc.confidence==='MEDIUM'?'#e3b341':'#8b949e';
+    iocHtml += `<div class="ioc-entry">
+      <div class="ioc-type-label">${ioc.type||'?'}</div>
+      <div style="flex:1;min-width:0">
+        <div class="ioc-val">${ioc.value||'—'}</div>
+        ${ioc.context ? `<div style="font-size:10px;color:#8b949e;margin-top:2px;word-break:break-word">${ioc.context}</div>` : ''}
+        ${(ioc.reputation||[]).length ? `<div style="font-size:10px;color:#8b949e;margin-top:2px;font-family:monospace">${ioc.reputation.join(' · ')}</div>` : ''}
+      </div>
+      <div class="ioc-confidence" style="color:${cc};flex-shrink:0">${ioc.confidence||'?'}</div>
+    </div>`;
+  });
+  if (!iocHtml) iocHtml = '<div style="color:#8b949e;font-size:12px;font-style:italic">No external indicators of compromise identified.</div>';
+
+  body += `<div class="report-section">
+    <div class="section-heading">
+      <span class="section-number">05</span>
+      Threat Intelligence
+    </div>
+    <div class="intel-cols">
+      <div>
+        <div class="intel-col-title">MITRE ATT&amp;CK Techniques</div>
+        ${mitrHtml}
+      </div>
+      <div>
+        <div class="intel-col-title">Indicators of Compromise</div>
+        ${iocHtml}
+      </div>
+    </div>
+  </div>`;
+
+  let gapsHtml = '';
+  if (gaps > 0) {
+    gapsHtml = `<div style="margin-top:16px">
+      <div style="font-size:10px;color:#e3b341;text-transform:uppercase;letter-spacing:.6px;margin-bottom:10px;font-weight:700">Evidence Gaps Identified</div>`;
+    (r.evidence_gaps||[]).forEach(g => {
+      gapsHtml += `<div class="evidence-gap-item"><span class="gap-bullet">—</span>${g}</div>`;
+    });
+    gapsHtml += '</div>';
+  } else {
+    gapsHtml = '<div style="margin-top:12px;font-size:12px;color:#3fb950">Complete evidence chain established. No gaps identified.</div>';
+  }
+
+  const findings = r.forensic_findings || [];
+  let forensicHtml = '';
+  if (findings.length) {
+    const sevC2 = {CRITICAL:'#f85149',HIGH:'#e3b341',MEDIUM:'#d29922',LOW:'#8b949e'};
+    forensicHtml = `<div style="margin-top:20px">
+      <div style="font-size:10px;color:#8b949e;text-transform:uppercase;letter-spacing:.6px;margin-bottom:10px;font-weight:700">Forensic Findings</div>
+      <table style="width:100%;border-collapse:collapse;font-size:11px">
+        <thead>
+          <tr style="border-bottom:1px solid #30363d">
+            <th style="text-align:left;padding:6px 8px;color:#8b949e;font-weight:600;width:22%">Finding</th>
+            <th style="text-align:left;padding:6px 8px;color:#8b949e;font-weight:600;width:30%">Evidence</th>
+            <th style="text-align:left;padding:6px 8px;color:#8b949e;font-weight:600;width:8%">EID</th>
+            <th style="text-align:left;padding:6px 8px;color:#8b949e;font-weight:600;width:14%">Account</th>
+            <th style="text-align:left;padding:6px 8px;color:#8b949e;font-weight:600;width:14%">System</th>
+            <th style="text-align:left;padding:6px 8px;color:#8b949e;font-weight:600;width:12%">Technique</th>
+          </tr>
+        </thead>
+        <tbody>`;
+    findings.forEach((ff,i) => {
+      const bg = i%2===0?'#0d1117':'#111418';
+      forensicHtml += `<tr style="background:${bg};border-bottom:1px solid #161b22">
+        <td style="padding:6px 8px;color:#e6edf3;vertical-align:top;font-weight:500">${ff.finding||'—'}</td>
+        <td style="padding:6px 8px;color:#c9d1d9;vertical-align:top">${ff.evidence||'—'}</td>
+        <td style="padding:6px 8px;color:#79c0ff;font-family:monospace;vertical-align:top">${ff.eid||'—'}</td>
+        <td style="padding:6px 8px;color:#e6edf3;font-family:monospace;font-size:10px;vertical-align:top">${ff.account||'—'}</td>
+        <td style="padding:6px 8px;color:#e6edf3;font-family:monospace;font-size:10px;vertical-align:top">${ff.system||'—'}</td>
+        <td style="padding:6px 8px;color:#79c0ff;font-family:monospace;vertical-align:top">${ff.technique||'—'}</td>
+      </tr>`;
+    });
+    forensicHtml += `</tbody></table></div>`;
+  }
+
+  const kc = r.kill_chain || {};
+  const kcStages = Object.entries(kc).filter(([,v])=>v);
+  let kcHtml = '';
+  if (kcStages.length) {
+    kcHtml = `<div style="margin-top:20px">
+      <div style="font-size:10px;color:#8b949e;text-transform:uppercase;letter-spacing:.6px;margin-bottom:10px;font-weight:700">Attack Chain</div>
+      <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px">`;
+    const stageColors = {
+      initial_access:'#f85149',execution:'#e3b341',persistence:'#e3b341',
+      privilege_escalation:'#d29922',defense_evasion:'#d29922',
+      credential_access:'#d29922',lateral_movement:'#79c0ff',impact:'#f85149'
+    };
+    kcStages.forEach(([stage]) => {
+      const c = stageColors[stage]||'#8b949e';
+      const label = stage.replace(/_/g,' ').replace(/\b\w/g,l=>l.toUpperCase());
+      kcHtml += `<span style="font-size:10px;font-weight:700;color:${c};background:rgba(255,255,255,.04);border:1px solid ${c}33;padding:3px 8px;border-radius:3px;white-space:nowrap">${label}</span>`;
+    });
+    kcHtml += '</div>';
+    kcStages.forEach(([stage, desc]) => {
+      const label = stage.replace(/_/g,' ').replace(/\b\w/g,l=>l.toUpperCase());
+      kcHtml += `<div style="display:flex;gap:12px;padding:6px 0;border-bottom:1px solid #161b22;font-size:12px">
+        <div style="min-width:160px;color:#8b949e;font-weight:600">${label}</div>
+        <div style="color:#c9d1d9">${desc}</div>
+      </div>`;
+    });
+    kcHtml += '</div>';
+  }
+
+  body += `<div class="report-section">
+    <div class="section-heading">
+      <span class="section-number">06</span>
+      Root Cause Analysis
+    </div>
+    <div style="padding:16px 20px;background:#161b22;border:1px solid #21262d;border-radius:6px;margin-bottom:0">
+      <div style="font-size:10px;color:#8b949e;text-transform:uppercase;letter-spacing:.6px;margin-bottom:8px;font-weight:700">Root Cause</div>
+      <div class="summary-text" style="font-size:13px">${r.root_cause||r.summary||'Under investigation — insufficient evidence.'}</div>
+    </div>
+    ${kcHtml}
+    ${forensicHtml}
+    ${gapsHtml}
+  </div>`;
+
+  const rem = r.remediation_plan||{};
+  function remPhase(steps) {
+    if (!steps||!steps.length) return '<div style="color:#8b949e;font-size:12px;font-style:italic">No actions defined.</div>';
+    return steps.map((s,i)=>`
+      <div class="rem-step">
+        <span class="rem-step-num">${String(i+1).padStart(2,'0')}.</span>
+        <span>${s}</span>
+      </div>`).join('');
+  }
+  body += `<div class="report-section">
+    <div class="section-heading">
+      <span class="section-number">07</span>
+      Remediation Plan
+    </div>
+    <div class="remediation-cols">
+      <div>
+        <div class="rem-phase-title" style="color:#f85149;border-color:#f85149">
+          Containment
+          <span style="font-size:9px;background:rgba(248,81,73,.1);color:#f85149;padding:2px 6px;border-radius:3px;margin-left:auto">IMMEDIATE</span>
+        </div>
+        ${remPhase(rem.containment)}
+      </div>
+      <div>
+        <div class="rem-phase-title" style="color:#e3b341;border-color:#e3b341">
+          Eradication
+          <span style="font-size:9px;background:rgba(227,179,65,.1);color:#e3b341;padding:2px 6px;border-radius:3px;margin-left:auto">SHORT-TERM</span>
+        </div>
+        ${remPhase(rem.eradication)}
+      </div>
+      <div>
+        <div class="rem-phase-title" style="color:#3fb950;border-color:#3fb950">
+          Recovery
+          <span style="font-size:9px;background:rgba(63,185,80,.1);color:#3fb950;padding:2px 6px;border-radius:3px;margin-left:auto">LONG-TERM</span>
+        </div>
+        ${remPhase(rem.recovery)}
+      </div>
+    </div>
+  </div>`;
+
+  document.getElementById('reportBody').innerHTML = body;
+
+  document.getElementById('reportFooterBar').innerHTML = `
+    <div class="footer-text">
+      Incident <span>${r.session_id||'—'}</span>
+      &nbsp;·&nbsp; AI RCA Generator
+      &nbsp;·&nbsp; <span>${(r.generated_at||'').slice(0,16).replace('T',' ')} UTC</span>
+      &nbsp;·&nbsp; CONFIDENTIAL
+    </div>
+    <div class="footer-btns">
+      <button class="btn-secondary" onclick="downloadReport()">⬇ Export PDF</button>
+      <button class="btn-secondary" onclick="downloadJSON()">⬇ Export JSON</button>
+      <button class="btn-primary" style="width:auto;padding:8px 16px" onclick="newAnalysis()">+ New Analysis</button>
+    </div>`;
+
+  document.getElementById('reportSection').classList.remove('hidden');
+  document.getElementById('progressSection').classList.add('hidden');
+}
+
+function downloadReport() {
+  if (!currentReport) return;
+  const r = currentReport;
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF({
+    orientation: 'portrait',
+    unit: 'mm',
+    format: 'a4'
+  });
+
+  const pageW = doc.internal.pageSize.getWidth();
+  const margin = 15;
+  const contentW = pageW - margin * 2;
+  let y = 20;
+
+  const colors = {
+    primary:   [99,  102, 241],
+    critical:  [239, 68,  68 ],
+    high:      [249, 115, 22 ],
+    medium:    [234, 179, 8  ],
+    low:       [100, 116, 139],
+    dark:      [15,  17,  35 ],
+    surface:   [26,  29,  46 ],
+    text:      [226, 232, 240],
+    muted:     [100, 116, 139],
+    white:     [255, 255, 255],
+  };
+
+  function sevColor(sev) {
+    const s = (sev||'').toLowerCase();
+    if (s === 'critical') return colors.critical;
+    if (s === 'high')     return colors.high;
+    if (s === 'medium')   return colors.medium;
+    return colors.low;
+  }
+
+  function checkPage(needed) {
+    if (y + needed > 275) {
+      doc.addPage();
+      y = 20;
+    }
+  }
+
+  function sectionTitle(title) {
+    checkPage(14);
+    doc.setFillColor(...colors.primary);
+    doc.rect(margin, y, 3, 10, 'F');
+    doc.setFillColor(26, 29, 46);
+    doc.rect(margin + 4, y, contentW - 4, 10, 'F');
+    doc.setTextColor(...colors.text);
+    doc.setFontSize(9);
+    doc.setFont('helvetica', 'bold');
+    doc.text(title.toUpperCase(), margin + 8, y + 6.5);
+    y += 14;
+  }
+
+  function addTable(headers, rows, colWidths) {
+    if (!rows.length) {
+      checkPage(10);
+      doc.setTextColor(...colors.muted);
+      doc.setFontSize(8);
+      doc.setFont('helvetica', 'italic');
+      doc.text('No data available', margin + 4, y);
+      y += 10;
+      return;
+    }
+    doc.autoTable({
+      startY: y,
+      head: [headers],
+      body: rows,
+      margin: { left: margin, right: margin },
+      styles: {
+        fontSize: 8,
+        cellPadding: 3,
+        textColor: [226, 232, 240],
+        fillColor: [26, 29, 46],
+        lineColor: [45, 49, 72],
+        lineWidth: 0.1,
+      },
+      headStyles: {
+        fillColor: [30, 34, 53],
+        textColor: [148, 163, 184],
+        fontStyle: 'bold',
+        fontSize: 7.5,
+      },
+      alternateRowStyles: {
+        fillColor: [20, 23, 38],
+      },
+      columnStyles: colWidths || {},
+      tableWidth: contentW,
+    });
+    y = doc.lastAutoTable.finalY + 8;
+  }
+
+  doc.setFillColor(...colors.dark);
+  doc.rect(0, 0, pageW, 297, 'F');
+
+  doc.setFillColor(...colors.surface);
+  doc.rect(0, 0, pageW, 38, 'F');
+  doc.setFillColor(...colors.primary);
+  doc.rect(0, 36, pageW, 2, 'F');
+
+  doc.setTextColor(...colors.text);
+  doc.setFontSize(18);
+  doc.setFont('helvetica', 'bold');
+  doc.text('AI RCA GENERATOR', margin, 16);
+
+  doc.setFontSize(9);
+  doc.setFont('helvetica', 'normal');
+  doc.setTextColor(...colors.muted);
+  doc.text('Automated Security Incident Root Cause Analysis', margin, 23);
+
+  const sev = (r.severity_overall || 'MEDIUM').toUpperCase();
+  const sevC = sevColor(sev);
+  doc.setFillColor(...sevC);
+  doc.roundedRect(pageW - margin - 36, 10, 36, 10, 2, 2, 'F');
+  doc.setTextColor(...colors.white);
+  doc.setFontSize(8);
+  doc.setFont('helvetica', 'bold');
+  doc.text(sev, pageW - margin - 18, 16.5, { align: 'center' });
+
+  const conf = (r.confidence_level || '').toUpperCase();
+  if (conf) {
+    doc.setFillColor(...colors.primary);
+    doc.roundedRect(pageW - margin - 76, 10, 38, 10, 2, 2, 'F');
+    doc.setTextColor(...colors.white);
+    doc.setFontSize(8);
+    doc.text(conf, pageW - margin - 57, 16.5, { align: 'center' });
+  }
+
+  y = 48;
+
+  const metaRows = [
+    ['Incident ID', r.session_id || '-',
+     'Generated At', (r.generated_at||'').slice(0,19).replace('T',' ') + ' UTC'],
+    ['Attack Confirmed', r.attack_confirmed ? 'YES' : 'NO',
+     'Analysis Model', r.model || '-'],
+    ['Attack Phase', r.attack_phase || '-',
+     'Confidence', r.confidence_level || '-'],
+    ['Affected Accounts', (r.affected_accounts||[]).join(', ')||'None',
+     'Affected Systems', (r.affected_systems||[]).join(', ')||'None'],
+  ];
+  doc.autoTable({
+    startY: y,
+    body: metaRows,
+    margin: { left: margin, right: margin },
+    styles: {
+      fontSize: 8,
+      cellPadding: 3,
+      textColor: [226, 232, 240],
+      fillColor: [26, 29, 46],
+      lineColor: [45, 49, 72],
+      lineWidth: 0.1,
+    },
+    columnStyles: {
+      0: { textColor: [148, 163, 184], fontStyle: 'bold', cellWidth: 38 },
+      1: { cellWidth: 57 },
+      2: { textColor: [148, 163, 184], fontStyle: 'bold', cellWidth: 38 },
+      3: { cellWidth: 57 },
+    },
+    tableWidth: contentW,
+  });
+  y = doc.lastAutoTable.finalY + 10;
+
+  sectionTitle('Executive Summary');
+  const summary = r.executive_summary || r.summary || 'No summary available.';
+  const summaryLines = doc.splitTextToSize(summary, contentW);
+  checkPage(summaryLines.length * 5 + 6);
+  doc.setTextColor(...colors.text);
+  doc.setFontSize(8.5);
+  doc.setFont('helvetica', 'normal');
+  doc.text(summaryLines, margin, y);
+  y += summaryLines.length * 5 + 8;
+
+  sectionTitle('Detection Summary');
+  const detHeaders = [
+    'Rule Name','Source','Technique',
+    'Severity','Count','Confidence'
+  ];
+  const detRows = (r.detection_hits || []).map(h => [
+    h.rule_name || '-',
+    h.source || '-',
+    h.technique || '-',
+    (h.severity || '-').toUpperCase(),
+    String(h.count || 0),
+    h.confidence ? h.confidence.toFixed(2) : '-',
+  ]);
+  addTable(detHeaders, detRows, {
+    0: { cellWidth: 52 },
+    1: { cellWidth: 22 },
+    2: { cellWidth: 22 },
+    3: { cellWidth: 20 },
+    4: { cellWidth: 14 },
+    5: { cellWidth: 20 },
+  });
+
+  sectionTitle('Event Timeline');
+  const tlHeaders = [
+    'First Seen','Event ID','Channel',
+    'Severity','Count','Systems','Anomalous'
+  ];
+  const tlRows = (r.event_timeline || []).map(e => {
+    const eid = (e.pattern||'').match(/EID=(\w+)/);
+    const ch  = (e.pattern||'').match(/CHANNEL=(\w+)/);
+    return [
+      (e.first_seen||'').slice(0,19).replace('T',' '),
+      eid ? 'EID='+eid[1] : '-',
+      ch ? ch[1] : '-',
+      (e.severity||'-').toUpperCase(),
+      String(e.count||0),
+      (e.systems||[]).join(', ') || '-',
+      e.is_anomalous ? 'YES' : 'NO',
+    ];
+  });
+  addTable(tlHeaders, tlRows, {
+    0: { cellWidth: 34 },
+    1: { cellWidth: 20 },
+    2: { cellWidth: 22 },
+    3: { cellWidth: 18 },
+    4: { cellWidth: 12 },
+    5: { cellWidth: 36 },
+    6: { cellWidth: 18 },
+  });
+
+  sectionTitle('MITRE ATT&CK');
+  const mitreHeaders = ['Technique ID','Technique Name','Evidence'];
+  const mitreRows = (r.mitre_attack || []).map(m => {
+    const isObj = typeof m === 'object' && m !== null;
+    const id    = isObj ? (m.technique_id||'-') : (m.split(' - ')[0]||m);
+    const name  = isObj ? (m.technique_name||'-') : (m.split(' - ').slice(1).join(' - ')||'-');
+    const evid  = isObj ? (m.evidence||'-') : '-';
+    return [id, name, evid];
+  });
+  addTable(mitreHeaders, mitreRows, {
+    0: { cellWidth: 25 },
+    1: { cellWidth: 65 },
+    2: { cellWidth: 70 },
+  });
+
+  sectionTitle('Indicators of Compromise');
+  const iocHeaders = ['Type','Value','Context','Confidence','Threat Intel'];
+  const iocRows = (r.ioc_list || []).map(ioc => [
+    ioc.type || '-',
+    ioc.value || '-',
+    ioc.context || '-',
+    ioc.confidence || '-',
+    (ioc.reputation || []).join(' | ') || 'Not enriched',
+  ]);
+  addTable(iocHeaders, iocRows, {
+    0: { cellWidth: 18 },
+    1: { cellWidth: 42 },
+    2: { cellWidth: 45 },
+    3: { cellWidth: 20 },
+    4: { cellWidth: 35 },
+  });
+
+  sectionTitle('Root Cause Analysis');
+  const rootCause = r.root_cause || r.summary || 'Under investigation.';
+  const rcLines = doc.splitTextToSize(rootCause, contentW);
+  checkPage(rcLines.length * 5 + 10);
+  doc.setTextColor(...colors.muted);
+  doc.setFontSize(7.5);
+  doc.setFont('helvetica', 'bold');
+  doc.text('ROOT CAUSE', margin, y);
+  y += 5;
+  doc.setTextColor(...colors.text);
+  doc.setFontSize(8.5);
+  doc.setFont('helvetica', 'normal');
+  doc.text(rcLines, margin, y);
+  y += rcLines.length * 5 + 8;
+
+  const ffRows = (r.forensic_findings || []).map(ff => {
+    const m = typeof (r.mitre_attack||[])[0]==='object'
+      ? '' : '';
+    return [
+      ff.finding || '-',
+      ff.evidence || '-',
+      ff.eid || '-',
+      ff.account || '-',
+      ff.system || '-',
+      ff.technique || '-',
+    ];
+  });
+  if (ffRows.length) {
+    const ffHeaders = ['Finding','Evidence','EID','Account','System','Technique'];
+    addTable(ffHeaders, ffRows, {
+      0: { cellWidth: 32 },
+      1: { cellWidth: 55 },
+      2: { cellWidth: 14 },
+      3: { cellWidth: 26 },
+      4: { cellWidth: 26 },
+      5: { cellWidth: 7 },
+    });
+  }
+
+  const rcaMetaHeaders = ['Parameter','Value'];
+  const rcaMetaRows = [
+    ['Attack Phase', r.attack_phase || '-'],
+    ['Affected Accounts', (r.affected_accounts||[]).join(', ') || 'None identified'],
+    ['Affected Systems',  (r.affected_systems||[]).join(', ')  || 'None identified'],
+    ['Evidence Gaps', `${(r.evidence_gaps||[]).length} gap(s): ${(r.evidence_gaps||[]).join('; ') || 'None'}`],
+  ];
+  addTable(rcaMetaHeaders, rcaMetaRows, {
+    0: { cellWidth: 45, fontStyle: 'bold', textColor: [148, 163, 184] },
+    1: { cellWidth: 115 },
+  });
+
+  sectionTitle('Remediation Plan');
+  const remHeaders = ['Phase','Action','Priority'];
+  const remRows = [];
+  const rem = r.remediation_plan || {};
+  (rem.containment || []).forEach(s => {
+    remRows.push(['CONTAINMENT', s, 'IMMEDIATE']);
+  });
+  (rem.eradication || []).forEach(s => {
+    remRows.push(['ERADICATION', s, 'SHORT-TERM']);
+  });
+  (rem.recovery || []).forEach(s => {
+    remRows.push(['RECOVERY', s, 'LONG-TERM']);
+  });
+  addTable(remHeaders, remRows, {
+    0: { cellWidth: 30 },
+    1: { cellWidth: 120 },
+    2: { cellWidth: 30 },
+  });
+
+  sectionTitle('Technical Details');
+  const techHeaders = ['Parameter','Value'];
+  const techRows = [
+    ['Session ID', r.session_id || '-'],
+    ['Generated At',
+     (r.generated_at||'').slice(0,19).replace('T',' ') + ' UTC'],
+    ['Analysis Model', r.model || '-'],
+    ['Attack Confirmed', r.attack_confirmed ? 'Yes' : 'No'],
+    ['Confidence Level', r.confidence_level || '-'],
+    ['Attack Phase', r.attack_phase || '-'],
+    ['Evidence Gaps',
+     `${(r.evidence_gaps||[]).length} identified`],
+    ['MITRE Techniques',
+     (r.mitre_attack||[]).join(', ') || 'None'],
+    ['IOCs Identified',
+     String((r.ioc_list||[]).length)],
+    ['Detection Rules Fired',
+     String((r.detection_hits||[]).length)],
+    ['Timeline Events',
+     String((r.event_timeline||[]).length)],
+  ];
+  addTable(techHeaders, techRows, {
+    0: { cellWidth: 55, fontStyle: 'bold',
+         textColor: [148, 163, 184] },
+    1: { cellWidth: 125 },
+  });
+
+  const totalPages = doc.internal.getNumberOfPages();
+  for (let p = 1; p <= totalPages; p++) {
+    doc.setPage(p);
+    doc.setFillColor(...colors.surface);
+    doc.rect(0, 287, pageW, 10, 'F');
+    doc.setTextColor(...colors.muted);
+    doc.setFontSize(7);
+    doc.setFont('helvetica', 'normal');
+    doc.text(
+      'AI RCA Generator — Confidential Security Report',
+      margin, 293
+    );
+    doc.text(
+      `Page ${p} of ${totalPages}`,
+      pageW - margin, 293,
+      { align: 'right' }
+    );
+  }
+
+  const filename = `RCA_Report_${r.session_id || 'export'}_${new Date().toISOString().slice(0,10)}.pdf`;
+  doc.save(filename);
+}
+
+function downloadJSON() {
+  if (!currentReport) return;
+  const blob = new Blob(
+    [JSON.stringify(currentReport, null, 2)],
+    {type: 'application/json'}
+  );
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `rca_report_${sessionId}.json`;
+  a.click();
+}
+
+function newAnalysis() {
+  currentReport = null;
+  sessionId     = null;
+  if (pollInterval) clearInterval(pollInterval);
+  document.getElementById('evtxFile').value = '';
+  document.getElementById('wafFile').value  = '';
+  document.getElementById('evtxBox').classList.remove('has-file');
+  document.getElementById('wafBox').classList.remove('has-file');
+  document.getElementById('evtxName').classList.add('hidden');
+  document.getElementById('wafName').classList.add('hidden');
+  document.getElementById('analyzeBtn').disabled = true;
+  document.getElementById('reportSection').classList.add('hidden');
+  document.getElementById('progressSection').classList.add('hidden');
+  document.getElementById('uploadSection').classList.remove('hidden');
+}
+
+function showError(msg) {
+  document.getElementById('progressSection').classList.add('hidden');
+  document.getElementById('uploadSection').classList.remove('hidden');
+  const e = document.getElementById('errorMsg');
+  e.textContent = 'Error: ' + msg;
+  e.classList.remove('hidden');
+}
+</script>
+</body>
+</html>
