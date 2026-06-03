@@ -266,34 +266,47 @@ ANALYSIS RULES:
         "Reset compromised credentials"
         "Review recently installed services"
 
+STRICT RULES:
+11. You are FORBIDDEN from mentioning any system, account, technique, or event
+    that does not appear in the SECURITY INCIDENT ANALYSIS section below.
+    If you mention it you must quote which line of the analysis it came from.
+12. PC01$ is a Windows machine account. Machine accounts ending in $ are NEVER
+    attackers. Remove them from IOC list.
+13. If you see events from different years (e.g. 2019 and 2026) in the same log
+    treat them as separate incidents and note this in evidence_gaps.
+    Do not mix them into one story.
+14. 127.0.0.1 as login source means RDP tunneling — include it as IOC
+    with context "RDP tunneling indicator" not as a regular attacker IP.
+15. Windows system binaries accessed by SYSTEM account are normal.
+    Only flag them if accessed by a non-system user account.
+16. For each IOC explain WHY it is suspicious in this specific context.
+    A file or process is only an IOC if it was used maliciously.
+    GOOD: lsass.exe is IOC because it was accessed by powershell.exe for
+    credential dumping (detected by LSASS Memory Access rule).
+    BAD: lsass.exe is IOC just because it exists.
+17. Machine accounts (ending in $) must NEVER appear in ioc_list.
+    They are Windows computer accounts not human attackers.
+18. Only include IPs in ioc_list if they are external IPs or have specific
+    malicious context. 127.0.0.1 should only appear with context explaining
+    why it is significant in THIS case.
+
 Respond ONLY with valid JSON. No markdown. No explanation. No trailing commas.
 
 {triage_context}
 
 Return this EXACT JSON structure (use null for unknown fields, empty array [] for none):
 {{
-  "summary": "3-4 sentence narrative that tells the attack story chronologically using specific timestamps, systems, and usernames from the evidence. Example: At [time] [user] logged in from [ip] to [system]. At [time] [action] was performed on [system]. This sequence indicates [attack technique].",
+  "executive_summary": "2-3 sentences maximum. Written for a CEO or non-technical manager. NO EventIDs, NO MITRE codes, NO tool names, NO technical terms like LSASS or Pass-the-Hash. Just plain English: what happened, which systems were affected, what the business impact is. Example of GOOD summary: 'A security breach was detected on the finance server where an unauthorized user gained access and attempted to hide their activity by deleting security records. Immediate action is required to contain the incident.' Example of BAD summary (do not do this): 'EID=1102 detected on PC01, Pass-the-Hash via T1550.002, LSASS memory access confirmed'",
   "attack_confirmed": true or false,
   "attack_phase": "most specific phase: Reconnaissance/Initial Access/Execution/Persistence/Privilege Escalation/Defense Evasion/Credential Access/Discovery/Lateral Movement/Collection/Exfiltration/Command and Control/Impact",
   "confidence_level": "CONFIRMED if 3+ independent detection sources agree / PROBABLE if 2 sources agree / POSSIBLE if 1 source / UNKNOWN if unclear",
   "attack_narrative": "Step-by-step timeline of what happened using exact timestamps from the evidence. Each step on a new line. Format: [timestamp] - [what happened with specific actor and system]",
-  "five_whys": [
-    {{"why": "Why did this occur?",
-      "answer": "Reference specific events and timestamps from the evidence"}},
-    {{"why": "Why was it not detected earlier?",
-      "answer": "Reference the detection gap visible in the evidence"}},
-    {{"why": "Why did existing controls fail?",
-      "answer": "Reference the specific control that was absent or bypassed"}},
-    {{"why": "Why did the attacker succeed?",
-      "answer": "Reference the specific capability or access that enabled success"}},
-    {{"why": "What is the root cause?",
-      "answer": "Single sentence root cause grounded in the evidence"}}
-  ],
+  "root_cause_analysis": "Full technical narrative. Must include ALL of the following: Exact timestamps of each event, Exact EventIDs that fired, Exact system names (hostnames), Exact account names involved, Which detection rule caught each event, What technique was used, How events are connected to each other. Format each finding as: [TIMESTAMP] [SYSTEM] [ACCOUNT] performed [ACTION] (EID=[X]) — detected by [RULE NAME]. This indicates [TECHNIQUE/T-CODE]. Only include events from the CONFIRMED SUSPICIOUS EVENTS and CRITICAL ALERTS sections.",
   "ioc_list": [
     {{"type": "IP or USERNAME or DOMAIN or HASH or URI or HOSTNAME",
       "value": "exact value from the evidence",
       "confidence": "HIGH or MEDIUM or LOW",
-      "context": "where and how this IOC appeared in the evidence"}}
+      "context": "WHY it is suspicious in this specific context — what malicious action was it involved in"}}
   ],
   "mitre_attack": ["T1234 - Technique Name"],
   "remediation_plan": {{

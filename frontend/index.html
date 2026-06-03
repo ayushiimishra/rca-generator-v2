@@ -894,7 +894,7 @@ function renderReport(r) {
     body += `<div class="report-section">
       <div class="section-heading">
         <span class="section-number">02b</span>
-        Attack Narrative
+        Incident Timeline
       </div>
       ${narrativeHtml}
     </div>`;
@@ -921,6 +921,7 @@ function renderReport(r) {
             <span>Count: ${h.count||0} event(s)</span>
             <span>Systems: <span style="font-family:monospace">${sys}</span></span>
           </div>
+          ${h.proof ? '<div style="margin-top:6px;padding:8px;background:#0d1117;border-radius:4px;font-size:11px;color:#6b7280;font-family:monospace">&#128269; ' + h.proof + '</div>' : ''}
         </div>
         <div class="finding-right">
           <div class="severity-indicator" style="color:${sevCol[s]||'#8b949e'}">${s}</div>

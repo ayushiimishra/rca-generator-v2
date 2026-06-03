@@ -193,6 +193,25 @@ async def analyze(
     return {"session_id": session_id}
 
 
+RULE_TO_EID_MAP = {
+    "log cleared": "1102",
+    "rdp login": "4624",
+    "admin user remote": "4624",
+    "brute force": "4625",
+    "explicit credential": "4648",
+    "privilege": "4672",
+    "process creation": "4688",
+    "scheduled task": "4698",
+    "new service": "7045",
+    "user account created": "4720",
+    "powershell": "4104",
+    "pass-the-hash": "4624",
+    "lsass": "4656",
+    "kerberoasting": "4769",
+    "dcsync": "4662",
+}
+
+
 async def run_pipeline(
     session_id:  str,
     evtx_paths:  list,
@@ -348,7 +367,34 @@ async def run_pipeline(
         try:
             with open(sigma_path) as f:
                 all_sigma = json.load(f)
-            report["detection_hits"] = all_sigma
+            enriched_hits = []
+            for hit in all_sigma:
+                enriched = dict(hit)
+                eid = None
+                rule_name = hit.get("rule_name", "")
+                for k, v in RULE_TO_EID_MAP.items():
+                    if k.lower() in rule_name.lower():
+                        eid = v
+                        break
+                if not eid and hit.get("sample_raw"):
+                    import re as _re2
+                    m = _re2.search(
+                        r'"EventID":\s*"?(\d+)"?',
+                        hit.get("sample_raw", "")
+                    )
+                    if m:
+                        eid = m.group(1)
+                if eid:
+                    enriched["event_id"] = eid
+                enriched["proof"] = (
+                    f"Detected by {hit.get('source', 'unknown')} "
+                    f"rule '{rule_name}'. "
+                    f"Found {hit.get('count', 0)} occurrence(s) "
+                    f"on systems: "
+                    f"{', '.join(hit.get('systems', []))}"
+                )
+                enriched_hits.append(enriched)
+            report["detection_hits"] = enriched_hits
         except Exception:
             report["detection_hits"] = []
 
@@ -422,6 +468,27 @@ async def get_report(session_id: str):
             status_code=202
         )
     return s["report"]
+
+
+@app.get("/api/context/{session_id}")
+async def get_context(session_id: str):
+    result = {"session_id": session_id}
+    for name, filename in [
+        ("triage_context",   f"{session_id}_triage.txt"),
+        ("sigma_hits",       f"{session_id}_sigma_hits.json"),
+        ("event_groups",     f"{session_id}_templates.json"),
+        ("scenario_hits",    f"{session_id}_scenario_hits.json"),
+    ]:
+        path = UPLOAD_DIR / filename
+        try:
+            with open(path) as f:
+                if filename.endswith(".json"):
+                    result[name] = json.load(f)
+                else:
+                    result[name] = f.read()
+        except Exception:
+            result[name] = None
+    return result
 
 
 @app.get("/api/health")
