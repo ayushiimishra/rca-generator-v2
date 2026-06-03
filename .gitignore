@@ -11,3 +11,4 @@ sigma-rules/
 chainsaw/
 chainsaw_x86_64-unknown-linux-gnu.tar.gz
 rca-generator/
+graphify-out/
