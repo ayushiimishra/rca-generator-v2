@@ -1099,7 +1099,7 @@ function renderReport(r) {
     </div>
     <div style="padding:16px 20px;background:#161b22;border:1px solid #21262d;border-radius:6px;margin-bottom:0">
       <div style="font-size:10px;color:#8b949e;text-transform:uppercase;letter-spacing:.6px;margin-bottom:8px;font-weight:700">Root Cause</div>
-      <div class="summary-text" style="font-size:13px">${r.root_cause||r.summary||'Under investigation — insufficient evidence.'}</div>
+      <div class="summary-text" style="font-size:13px">${r.root_cause_analysis||r.root_cause||r.summary||'Under investigation — insufficient evidence.'}</div>
     </div>
     ${kcHtml}
     ${forensicHtml}
@@ -1421,7 +1421,7 @@ function downloadReport() {
   });
 
   sectionTitle('Root Cause Analysis');
-  const rootCause = r.root_cause || r.summary || 'Under investigation.';
+  const rootCause = r.root_cause_analysis || r.root_cause || r.summary || 'Under investigation.';
   const rcLines = doc.splitTextToSize(rootCause, contentW);
   checkPage(rcLines.length * 5 + 10);
   doc.setTextColor(...colors.muted);
