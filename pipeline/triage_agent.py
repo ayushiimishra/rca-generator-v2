@@ -438,6 +438,55 @@ def build_correlated_context(
                 f"{count}x — normal activity\n"
             )
 
+    # WAF / web access log templates
+    waf_attacks = []
+    waf_baseline = []
+    for t in templates:
+        tmpl = t.get("template", "")
+        if not tmpl.startswith("waf|"):
+            continue
+        parts = {p.split("=")[0]: p.split("=")[1]
+                 for p in tmpl.split("|")[1:]
+                 if "=" in p}
+        attack  = parts.get("ATTACK", "none")
+        method  = parts.get("METHOD", "?")
+        status  = parts.get("STATUS", "?")
+        count   = t.get("count", 0)
+        sev     = t.get("top_severity", "info")
+        first   = t.get("first_seen", "unknown")
+        last    = t.get("last_seen", "unknown")
+        anomalous = t.get("is_anomalous", False)
+        meta    = t.get("sample_metadata", {}) or {}
+        src_ip  = meta.get("src_ip", "")
+        uri     = meta.get("uri", "")[:120]
+
+        if attack != "none" or sev in ("critical", "high", "medium") or anomalous:
+            waf_attacks.append(
+                f"  ATTACK: {attack.upper()} via {method} → HTTP {status}\n"
+                f"  Count:      {count} occurrence(s)\n"
+                f"  First seen: {first}\n"
+                f"  Last seen:  {last}\n"
+                f"  Severity:   {sev.upper()}\n"
+                + (f"  Source IP:  {src_ip}\n" if src_ip else "")
+                + (f"  Sample URI: {uri}\n" if uri else "")
+                + ("\n")
+            )
+        else:
+            waf_baseline.append(
+                f"  {method} {status}: {count}x — normal\n"
+            )
+
+    if waf_attacks:
+        lines.append("--- WEB ATTACK DETECTIONS ---\n\n")
+        lines.extend(waf_attacks)
+    elif waf_baseline:
+        lines.append("--- WEB TRAFFIC SUMMARY ---\n")
+        total_waf = sum(t.get("count", 0) for t in templates
+                        if t.get("template", "").startswith("waf|"))
+        lines.append(f"  Total requests: {total_waf:,}\n")
+        lines.append(f"  Traffic patterns: {len(waf_baseline)}\n")
+        lines.append("  No attack signatures detected in web logs.\n\n")
+
     if confirmed_eids:
         lines.append("--- CONFIRMED SUSPICIOUS EVENTS ---\n\n")
         lines.extend(confirmed_eids)
