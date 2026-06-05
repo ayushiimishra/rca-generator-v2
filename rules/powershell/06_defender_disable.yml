@@ -1,0 +1,44 @@
+# SOURCE: mdecrevoisier defender-critical security components disabled (PowerShell).yaml
+#         SigmaHQ posh_ps_defender_disable.yml
+# CONTEXT: Set-MpPreference is the PowerShell cmdlet to configure Windows
+# Defender. Attackers disable Defender before deploying payloads (ransomware
+# pre-deployment is the most common use case).
+# DisableRealtimeMonitoring, DisableBehaviorMonitoring = core AV functions
+# DisableIOAVProtection = disables scanning of downloaded files
+# ExclusionPath = adds folder exclusions (attacker adds payload folder)
+# The contains_all with 'Set-MpPreference' + specific param prevents false
+# positive from scripts that just read defender status.
+# FALSE POSITIVE: Very low. Legitimate admin scripts that disable Defender
+# for testing should be in change management - investigate all hits.
+title: PowerShell Windows Defender Disabled via Set-MpPreference
+event_id: "4104"
+description: >
+  PowerShell Script Block disables Windows Defender components via
+  Set-MpPreference. This is a ransomware and APT pre-deployment step
+  to blind AV before dropping payloads. DisableRealtimeMonitoring,
+  DisableBehaviorMonitoring, or adding ExclusionPath are all high-severity
+  defense evasion actions.
+  Source: mdecrevoisier windows-defender patterns + SigmaHQ defender rules.
+severity: critical
+confidence: 0.93
+technique: T1562.001
+mitre: Defense Evasion
+conditions:
+  - field: ScriptBlockText
+    contains_any:
+      - "Set-MpPreference"
+      - "Set-MpComputerStatus"
+  - field: ScriptBlockText
+    contains_any:
+      - "DisableRealtimeMonitoring"
+      - "DisableBehaviorMonitoring"
+      - "DisableIOAVProtection"
+      - "DisableIntrusionPreventionSystem"
+      - "DisableScriptScanning"
+      - "DisableBlockAtFirstSeen"
+      - "DisableAntiSpyware"
+      - "DisableAntiVirus"
+      - "ExclusionPath"
+      - "ExclusionExtension"
+      - "SignatureDisableUpdateOnStartupWithoutEngine"
+      - "MAPSReporting 0"

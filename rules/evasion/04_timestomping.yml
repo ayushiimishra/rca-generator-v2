@@ -1,0 +1,33 @@
+# SOURCE: mdecrevoisier windows-os System time changed (PowerShell)
+#         SigmaHQ posh_ps_timestomp.yml
+# CONTEXT: Timestomping modifies file creation/modification times to hide
+# when malware was deployed. PowerShell timestamps are set via direct
+# property assignment (.CreationTime =, .LastWriteTime =).
+# Legitimate scripts that change file timestamps are extremely rare.
+# Attackers timestamp their tools to match OS file dates to evade
+# "find new files" forensic techniques.
+# FALSE POSITIVE: Very low. Some backup/sync tools modify timestamps
+# but use dedicated APIs not raw PS property assignment.
+title: PowerShell Timestomping - File Timestamp Modification
+event_id: "4104"
+description: >
+  PowerShell script modified file timestamps directly using property
+  assignment (.CreationTime, .LastWriteTime, .LastAccessTime). Timestomping
+  is a forensic evasion technique to hide when malware was deployed by
+  making new files appear old. Used by APT groups and ransomware affiliates
+  to evade "find recently created files" forensic searches.
+  Source: mdecrevoisier timestomp PowerShell + SigmaHQ posh_ps_timestomp.
+severity: high
+confidence: 0.87
+technique: T1070.006
+mitre: Defense Evasion
+conditions:
+  - field: ScriptBlockText
+    contains_any:
+      - ".CreationTime ="
+      - ".LastWriteTime ="
+      - ".LastAccessTime ="
+      - "CreationTimeUtc ="
+      - "LastWriteTimeUtc ="
+      - ".Attributes ="
+      - "Set-ItemProperty.*CreationTime"

@@ -1,0 +1,28 @@
+# SOURCE: mdecrevoisier windows-dns zone transfer + tunneling patterns
+#         SigmaHQ dns_query_susp_long_answer.yml
+# CONTEXT: Your dns_parser.py already sets detections=["dns_tunnel"] when
+# the subdomain label length exceeds 40 chars. This rule reads that metadata
+# field directly rather than re-implementing the detection.
+# DNS tunneling tools (iodine, DNScat2, dnsexfil) encode data in subdomain
+# labels because DNS is almost never blocked by firewalls.
+# Normal DNS queries have subdomain labels under 20 characters.
+# Queries with 40+ char labels are effectively always tunneling or DGA.
+# FALSE POSITIVE: Some CDN providers use long encoded subdomains.
+# The dns_parser.py threshold of 40 chars already filters legitimate use.
+title: DNS Tunneling Detected - Long Subdomain Label
+event_id: "dns_query"
+description: >
+  DNS query with a subdomain label length exceeding 40 characters,
+  indicating DNS tunneling (iodine, DNScat2, dnsexfil). DNS tunneling
+  encodes data in subdomain labels to exfiltrate data or establish C2
+  through DNS which is rarely blocked by firewalls.
+  Detection via dns_parser.py subdomain_length field.
+  Source: mdecrevoisier DNS tunneling + dns_parser.py built-in detection.
+severity: critical
+confidence: 0.90
+technique: T1071.004
+mitre: Command and Control
+conditions:
+  - field: detections
+    contains_any:
+      - "dns_tunnel"

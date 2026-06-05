@@ -1,0 +1,39 @@
+# SOURCE: SigmaHQ proc_creation_win_mshta_susp_pattern.yml
+#         proc_creation_win_mshta_susp_child_processes.yml
+# CONTEXT: mshta.exe executes HTA (HTML Application) files. Attackers use
+# it to execute VBScript/JScript from URLs or memory (mshta vbscript: pattern).
+# The suspicious pattern is: mshta launched from a scripting parent
+# (cmd, powershell, wscript) OR mshta executing a URL/vbscript: URI.
+# Legitimate mshta opens .hta files from local/UNC paths.
+# The filter removes mshta running with .htm/.hta local file paths
+# from System32 (legitimate usage).
+# FALSE POSITIVE: SharePoint and some enterprise apps use .hta files.
+# The URL and vbscript: patterns have no legitimate enterprise use.
+title: Mshta Suspicious Execution - URL or Vbscript Pattern
+event_id: "4688"
+event_ids: ["4688", "1"]
+description: >
+  mshta.exe was launched with a URL argument or vbscript: URI, or was
+  spawned by a scripting interpreter (cmd, powershell, wscript, regsvr32).
+  Attackers use mshta to execute arbitrary VBScript/JScript directly
+  from URLs without writing to disk, or as a proxy spawner for shells.
+  The combination of suspicious parent OR URL/script URI is the indicator.
+  Source: SigmaHQ mshta suspicious pattern rules.
+severity: high
+confidence: 0.88
+technique: T1218.005
+mitre: Defense Evasion
+conditions:
+  - field: Image
+    ends_with_any:
+      - "\\mshta.exe"
+  - field: CommandLine
+    contains_any:
+      - "http://"
+      - "https://"
+      - "vbscript:"
+      - "javascript:"
+      - "\\AppData\\"
+      - "\\Temp\\"
+      - "C:\\ProgramData\\"
+      - "\\Users\\Public\\"

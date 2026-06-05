@@ -1,0 +1,35 @@
+# SOURCE: mdecrevoisier windows-active_directory/win-ad-replication privilege granted
+#         SigmaHQ win_security_dcsync_replication_rights_granted.yml
+# CONTEXT: EID 5136 fires when an AD object attribute is modified.
+# Attacker grants replication rights to a compromised account BEFORE running
+# DCSync. This is the setup step. EID 4662 (above) is the execution step.
+# ntSecurityDescriptor modification with replication GUIDs in AttributeValue
+# and OperationType %%14674 (value added) is the exact fingerprint.
+# FALSE POSITIVE: Legitimate AD delegation changes rarely touch replication
+# rights. Machine accounts ($) are excluded (DCs themselves have these rights).
+title: DCSync Rights Granted - Replication ACE Added to AD Object
+event_id: "5136"
+description: >
+  Replication privileges were added to an AD object's security descriptor
+  (ntSecurityDescriptor). An attacker with DA rights granted DCSync ability
+  to a compromised account before running credential extraction.
+  EID 5136 captures the SETUP; EID 4662 captures the EXECUTION.
+  OperationType %%14674 = value added (not modified/deleted).
+  Source: mdecrevoisier win-ad-replication privilege granted rule.
+severity: critical
+confidence: 0.91
+technique: T1003.006
+mitre: Credential Access
+conditions:
+  - field: AttributeLDAPDisplayName
+    equals: "ntSecurityDescriptor"
+  - field: OperationType
+    equals: "%%14674"
+  - field: AttributeValue
+    contains_any:
+      - "1131f6aa-9c07-11d1-f79f-00c04fc2dcd2"
+      - "1131f6ad-9c07-11d1-f79f-00c04fc2dcd2"
+      - "89e95b76-444d-4c62-991a-0facbeda640c"
+  - field: SubjectUserName
+    not_ends_with: "$"
+    not_empty: true

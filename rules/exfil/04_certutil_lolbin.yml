@@ -1,0 +1,53 @@
+# SOURCE: SigmaHQ proc_creation_win_certutil_encode.yml
+#         proc_creation_win_certutil_decode.yml
+#         proc_creation_win_certutil_download.yml
+# CONTEXT: certutil has three attacker-relevant uses:
+#   1. -urlcache -f URL - download file from internet (most common)
+#   2. -decode file - decode a base64-encoded payload
+#   3. -encode file - base64-encode data for exfiltration
+# The contains_all operator ensures we have the specific flag combination
+# that indicates malicious use, not legitimate certificate operations.
+# Legitimate certutil: -verify, -dump, -addstore, -viewstore (no URL/file flags in temp)
+# FALSE POSITIVE: Legitimate cert downloading uses known CA endpoints.
+# The -urlcache -f combination with non-CA URLs is always suspicious.
+title: Certutil Malicious Use - Download, Encode, or Decode
+event_id: "4688"
+event_ids: ["4688", "1"]
+description: >
+  certutil.exe was used for a malicious purpose: downloading a file via
+  -urlcache, decoding a base64 payload via -decode, or encoding data
+  for exfiltration via -encode. These are Living-off-the-Land techniques
+  using a trusted Windows binary for attacker operations.
+  The contains_all logic ensures both the flag AND a suspicious argument
+  (URL, temp path) are present - eliminating legitimate cert management FPs.
+  Source: SigmaHQ certutil download/encode/decode rules.
+severity: high
+confidence: 0.88
+technique: T1218
+mitre: Defense Evasion
+conditions:
+  - field: Image
+    ends_with_any:
+      - "\\certutil.exe"
+  - field: CommandLine
+    contains_any:
+      - "-urlcache"
+      - "urlcache"
+      - "-decode"
+      - "-decodehex"
+      - "-encode"
+  - field: CommandLine
+    contains_any:
+      - "http://"
+      - "https://"
+      - "\\temp\\"
+      - "\\appdata\\"
+      - "\\downloads\\"
+      - "\\public\\"
+      - "\\programdata\\"
+      - ".exe"
+      - ".dll"
+      - ".ps1"
+      - ".bat"
+      - ".bin"
+      - ".dat"

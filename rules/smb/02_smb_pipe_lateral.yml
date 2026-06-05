@@ -1,0 +1,30 @@
+# SOURCE: mdecrevoisier windows-active_directory "Remote service creation over SMB"
+#         "Remote schedule task creation via named pipes"
+# CONTEXT: EID 5145 fires when a named pipe or SMB share is accessed.
+# Remote service creation (PSExec, Impacket SMBexec) uses the svcctl
+# named pipe. Remote task creation (Atexec) uses the atsvc pipe.
+# These specific pipe names are accessed exclusively by lateral movement tools.
+# mdecrevoisier identifies both svcctl and atsvc as lateral movement indicators.
+# FALSE POSITIVE: Legitimate SC.exe creates services remotely via svcctl.
+# Should correlate with the target service being unusual.
+title: Remote Service/Task Creation via SMB Named Pipes (Lateral Movement)
+event_id: "5145"
+description: >
+  A SMB named pipe was accessed that is used exclusively for remote service
+  or task creation - the lateral movement mechanism of PSExec, Impacket,
+  and Atexec. The svcctl pipe (Service Control Manager) is used by PSExec
+  and SMBexec. The atsvc pipe is used by Atexec for remote task creation.
+  Both indicate command execution on a remote host via SMB.
+  Source: mdecrevoisier remote service/task creation via named pipes.
+severity: high
+confidence: 0.85
+technique: T1021.002
+mitre: Lateral Movement
+conditions:
+  - field: RelativeTargetName
+    contains_any:
+      - "svcctl"
+      - "atsvc"
+      - "samr"
+      - "lsarpc"
+      - "winreg"

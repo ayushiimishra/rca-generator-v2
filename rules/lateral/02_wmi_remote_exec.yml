@@ -1,0 +1,34 @@
+# SOURCE: mdecrevoisier windows-active_directory Impacket WMIexec process execution
+#         SigmaHQ proc_creation_win_wmic_remote_execution.yml
+# CONTEXT: wmic with /node: flag executes commands on remote systems.
+# This is one of the primary lateral movement methods in modern attacks.
+# The /node: flag distinguishes remote execution from local wmic queries.
+# "process call create" is the specific method for remote code execution.
+# FALSE POSITIVE: Legitimate IT admins use wmic /node: for remote management.
+# In practice, most environments should transition to PowerShell Remoting.
+# Set at 0.75 confidence - correlate with other lateral movement indicators.
+title: WMI Remote Process Creation - Lateral Movement
+event_id: "4688"
+event_ids: ["4688", "1"]
+description: >
+  wmic.exe executed with /node: flag to run a command on a remote system.
+  WMI remote execution (wmic /node:target process call create "cmd /c ...")
+  is a primary lateral movement technique used by Impacket WMIexec, manual
+  attackers, and post-exploitation frameworks. Requires no PSExec artifacts.
+  Source: mdecrevoisier Impacket WMIexec + SigmaHQ wmic remote execution.
+severity: high
+confidence: 0.77
+technique: T1047
+mitre: Lateral Movement
+conditions:
+  - field: Image
+    ends_with_any:
+      - "\\wmic.exe"
+  - field: CommandLine
+    contains_any:
+      - "/node:"
+      - " node:"
+  - field: CommandLine
+    contains_any:
+      - "process call create"
+      - "call create"

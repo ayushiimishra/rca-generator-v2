@@ -1,0 +1,38 @@
+# SOURCE: SigmaHQ proc_creation_win_nltest_recon.yml
+#         mdecrevoisier windows-active_directory domain trust discovery
+# CONTEXT: nltest is a Windows built-in tool for Netlogon operations.
+# Attackers use it to enumerate domain trusts, DC lists, and domain structure
+# before lateral movement. /dclist, /domain_trusts, /dsgetdc are the
+# reconnaissance flags - they have no regular user/admin need.
+# On a workstation, any nltest with these flags is suspicious.
+# On a server or DC, correlate with context.
+# FALSE POSITIVE: DC troubleshooting by experienced sysadmins. Low rate.
+# /dsgetdc is used by some legitimate DC diagnostics tools.
+title: nltest Domain Trust and DC Enumeration
+event_id: "4688"
+event_ids: ["4688", "1"]
+description: >
+  nltest.exe was run with flags that enumerate domain trusts, domain
+  controller lists, or domain structure. Attackers use nltest immediately
+  after initial access to map the AD environment before lateral movement.
+  /dclist, /domain_trusts, /all_trusts give attackers a complete picture
+  of the network topology and attack paths.
+  Source: SigmaHQ nltest recon + mdecrevoisier domain trust discovery.
+severity: high
+confidence: 0.84
+technique: T1482
+mitre: Discovery
+conditions:
+  - field: Image
+    ends_with_any:
+      - "\\nltest.exe"
+  - field: CommandLine
+    contains_any:
+      - "/dclist"
+      - "/domain_trusts"
+      - "/all_trusts"
+      - "/trusted_domains"
+      - "/dsgetdc"
+      - "/server:"
+      - "/finduser"
+      - "/user:"

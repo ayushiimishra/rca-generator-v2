@@ -1,0 +1,44 @@
+# SOURCE: SigmaHQ proc_creation_win_rclone_execution.yml
+#         DFIR Report ransomware exfiltration case studies 2024/2025
+# CONTEXT: Rclone is a legitimate cloud sync tool repurposed by ransomware
+# affiliates (LockBit, BlackCat, Conti, Cl0p) for data exfiltration.
+# On a server or workstation, rclone with cloud destination flags
+# (--config pointing to attacker's config, mega:, sftp://, etc.)
+# is an exfiltration indicator.
+# Unit 42 2025 report confirms rclone in >40% of ransomware exfil cases.
+# FALSE POSITIVE: Legitimate backup systems using rclone. These should be
+# known to IT and run as services, not interactively from cmd/powershell.
+# Interactive rclone execution from a user session = investigate.
+title: Rclone Data Exfiltration to Cloud Storage
+event_id: "4688"
+event_ids: ["4688", "1"]
+description: >
+  rclone.exe was executed with cloud destination flags indicating data
+  exfiltration. Rclone is used in >40% of ransomware data theft cases
+  (LockBit, BlackCat, Conti affiliates) to exfiltrate data to MEGA,
+  Google Drive, or attacker-controlled SFTP before ransomware deployment.
+  The --config flag or cloud provider prefixes confirm exfil intent.
+  Source: SigmaHQ rclone detection + DFIR Report 2024/2025 ransomware TTPs.
+severity: critical
+confidence: 0.90
+technique: T1567.002
+mitre: Exfiltration
+conditions:
+  - field: Image
+    ends_with_any:
+      - "\\rclone.exe"
+  - field: CommandLine
+    contains_any:
+      - "--config"
+      - "mega:"
+      - "drive:"
+      - "dropbox:"
+      - "onedrive:"
+      - "s3:"
+      - "sftp://"
+      - "ftp://"
+      - "gdrive:"
+      - "b2:"
+      - "copy "
+      - "sync "
+      - "move "

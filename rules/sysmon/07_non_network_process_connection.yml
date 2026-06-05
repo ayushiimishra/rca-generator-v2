@@ -1,0 +1,35 @@
+# SOURCE: SigmaHQ sysmon_non_network_processes_network_activity.yml
+#         hayabusa-rules lateral movement patterns
+# CONTEXT: Notepad, calc, mspaint have NO legitimate network functionality.
+# Any outbound connection from these processes means an attacker injected
+# into them and is using the process as a network proxy (process injection
+# for C2 communication masquerading as benign processes).
+# FALSE POSITIVE: None. These processes do not make network connections.
+# mspaint.exe in modern Windows may call telemetry - excluded via
+# DestinationHostname filter if needed.
+title: Non-Network Process Making Outbound Connection (Injection Indicator)
+event_id: "3"
+description: >
+  A process with no legitimate network functionality made an outbound
+  TCP/UDP connection. This indicates process injection where an attacker
+  injected C2 communication code into a benign process to evade detection.
+  Notepad, calc, mspaint, wordpad have zero legitimate network use.
+  Initiated field confirms the connection was outbound from this process.
+severity: high
+confidence: 0.90
+technique: T1055.001
+mitre: Defense Evasion
+conditions:
+  - field: Image
+    ends_with_any:
+      - "\\notepad.exe"
+      - "\\calc.exe"
+      - "\\mspaint.exe"
+      - "\\wordpad.exe"
+      - "\\mmc.exe"
+  - field: Initiated
+    equals: "true"
+  - field: DestinationIp
+    not_starts_with_any:
+      - "127."
+      - "::1"

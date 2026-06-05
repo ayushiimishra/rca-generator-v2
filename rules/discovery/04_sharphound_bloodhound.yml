@@ -1,0 +1,38 @@
+# SOURCE: SigmaHQ proc_creation_win_hktl_bloodhound_sharphound.yml
+#         SigmaHQ posh_ps_malicious_commandlets.yml (SharpHound PS variant)
+# CONTEXT: SharpHound is the BloodHound data collector. Its presence on any
+# non-pentest system is a definitive attacker indicator. BloodHound maps
+# AD attack paths to Domain Admin - it is exclusively an offensive tool.
+# Detection covers: direct SharpHound.exe execution, common renamed copies,
+# and PowerShell invocation patterns.
+# The -CollectionMethod All flag dumps everything. Even partial collections
+# (-CollectionMethod ACL, Session, etc.) are suspicious.
+# FALSE POSITIVE: Authorized penetration tests and red team exercises.
+# Should correlate with pentest authorization records if present.
+title: SharpHound/BloodHound AD Attack Path Mapper Execution
+event_id: "4688"
+event_ids: ["4688", "1"]
+description: >
+  SharpHound (BloodHound data collector) was executed for AD attack path
+  mapping. BloodHound identifies shortest paths to Domain Admin - it is
+  exclusively an offensive tool with no defensive use case.
+  Covers direct execution, renamed binaries (common evasion), and
+  PowerShell-based execution via Invoke-BloodHound.
+  Source: SigmaHQ BloodHound/SharpHound detection rules.
+severity: critical
+confidence: 0.95
+technique: T1087.002
+mitre: Discovery
+conditions:
+  - field: Image
+    contains_any:
+      - "\\SharpHound"
+      - "\\sharphound"
+  - field: CommandLine
+    contains_any:
+      - "SharpHound"
+      - "Invoke-BloodHound"
+      - "-CollectionMethod"
+      - "--CollectionMethod"
+      - "BloodHound"
+      - "AzureHound"

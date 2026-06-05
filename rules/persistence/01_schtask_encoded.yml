@@ -1,0 +1,46 @@
+# SOURCE: SigmaHQ win_security_susp_schtask_creation.yml
+#         mdecrevoisier windows-scheduled_task encoded payload detection
+#         hayabusa-rules persistence scheduled task patterns
+# CONTEXT: The existing rule 08 fires on ALL scheduled tasks created by
+# any named user - enormous FP rate. This rule is precise: it only fires
+# when the TASK CONTENT contains encoded commands, URL downloads, or
+# suspicious paths. TaskContent is available in EID 4698 when detailed
+# task auditing is enabled.
+# The three signal patterns:
+#   1. -EncodedCommand/-enc = PowerShell encoded payload in task
+#   2. http:// or https:// = task downloads from internet
+#   3. IEX/DownloadString = download-execute cradle in task
+# FALSE POSITIVE: Very low with these specific patterns in task content.
+title: Scheduled Task with Encoded Command or Download Action
+event_id: "4698"
+description: >
+  A scheduled task was created with encoded PowerShell commands, HTTP
+  download URLs, or download-execute cradles in the task action.
+  Attackers create scheduled tasks that download and run payloads on
+  trigger (startup, login, periodic) for persistent code execution.
+  Encoded commands in tasks indicate deliberate obfuscation.
+  This rule replaces the generic EID 4698 rule with precision targeting.
+  Source: SigmaHQ suspicious schtask + mdecrevoisier scheduled task patterns.
+severity: high
+confidence: 0.89
+technique: T1053.005
+mitre: Persistence
+conditions:
+  - field: TaskContent
+    contains_any:
+      - "-EncodedCommand"
+      - "-encodedcommand"
+      - "-enc "
+      - "IEX "
+      - "Invoke-Expression"
+      - "DownloadString"
+      - "DownloadFile"
+      - "http://"
+      - "https://"
+      - "\\AppData\\"
+      - "\\Temp\\"
+      - "\\Users\\Public\\"
+      - "-w hidden"
+      - "-windowstyle hidden"
+      - "bypass"
+      - "FromBase64String"

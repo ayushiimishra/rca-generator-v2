@@ -1,0 +1,37 @@
+# SOURCE: Existing rule 11 enhanced with additional variants
+#         mdecrevoisier windows-os VSS backup deletion variants
+#         SigmaHQ proc_creation_win_susp_vssadmin_delete.yml
+# CONTEXT: Shadow copy deletion is the DEFINITIVE ransomware pre-deployment
+# step. No legitimate use case involves deleting all shadow copies.
+# The existing rule covers vssadmin but misses wmic and wbadmin variants.
+# mdecrevoisier covers PowerShell VSS deletion too.
+# All variants captured here. The wmic shadowcopy delete pattern is
+# especially common in LockBit and BlackCat affiliates.
+# FALSE POSITIVE: None. Shadow copy deletion is always malicious.
+title: Shadow Copy Deletion - All Variants (Ransomware Pre-Deployment)
+event_id: "4688"
+event_ids: ["4688", "1"]
+description: >
+  All shadow copies were deleted using vssadmin, wmic, wbadmin, or
+  PowerShell. This is the definitive ransomware pre-deployment step
+  used by every major ransomware family (LockBit, BlackCat, Conti, Cl0p)
+  to prevent recovery. Covers all deletion variants across all tools.
+  No legitimate administrative use case involves deleting all shadow copies.
+  Source: mdecrevoisier VSS deletion variants + SigmaHQ shadow copy rules.
+severity: critical
+confidence: 0.99
+technique: T1490
+mitre: Impact
+conditions:
+  - field: CommandLine
+    contains_any:
+      - "delete shadows"
+      - "delete shadow"
+      - "resize shadowstorage"
+      - "shadowcopy delete"
+      - "shadowcopy where"
+      - "wbadmin delete"
+      - "delete catalog"
+      - "delete backup"
+      - "Win32_ShadowCopy"
+      - "ShadowCopy.Delete"

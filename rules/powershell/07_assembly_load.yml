@@ -1,0 +1,36 @@
+# SOURCE: SigmaHQ posh_ps_load_dotnet_assembly.yml
+#         hayabusa-rules fileless execution patterns
+# CONTEXT: Loading .NET assemblies directly in memory bypasses disk-based
+# AV scanning. [System.Reflection.Assembly]::Load() accepts raw bytes,
+# allowing fully fileless malware execution. This is used by Cobalt Strike,
+# Empire, and custom loaders to run offensive .NET tools without touching disk.
+# The Load + byte array combination (not just Load alone) reduces FP.
+# FALSE POSITIVE: Some legitimate admin tools use in-memory assembly loading.
+# Combined with high entropy or large payloads this is almost never benign.
+title: PowerShell In-Memory .NET Assembly Loading (Fileless Execution)
+event_id: "4104"
+description: >
+  PowerShell loads a .NET assembly directly into memory using Reflection,
+  bypassing disk-based AV scanning. This is the fileless execution technique
+  used by Cobalt Strike, Empire, and tools like SharpHound, Rubeus, and
+  SharpKatz that are loaded in-memory from PowerShell to avoid disk artifacts.
+  [Assembly]::Load() with byte arrays is the canonical indicator.
+severity: high
+confidence: 0.84
+technique: T1620
+mitre: Defense Evasion
+conditions:
+  - field: ScriptBlockText
+    contains_any:
+      - "[System.Reflection.Assembly]::Load"
+      - "[Reflection.Assembly]::Load"
+      - "Assembly.Load("
+      - "[System.Reflection.Assembly]::LoadFile"
+      - "[System.Reflection.Assembly]::LoadFrom"
+  - field: ScriptBlockText
+    contains_any:
+      - "[Byte[]]"
+      - "[byte[]]"
+      - "Convert.FromBase64String"
+      - "FromBase64String"
+      - "ReadAllBytes"

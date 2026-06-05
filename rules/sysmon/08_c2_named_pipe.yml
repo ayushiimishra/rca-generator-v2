@@ -1,0 +1,34 @@
+# SOURCE: SigmaHQ sysmon_susp_named_pipe.yml, sysmon_cobalt_strike_named_pipe.yml
+#         mdecrevoisier windows-os patterns
+# CONTEXT: Named pipe names used by common C2 frameworks are distinctive.
+# Cobalt Strike uses postex_*, msagent_*, status_*, mojo_* patterns.
+# Meterpreter uses \pipe\meterpreter variants.
+# These names are hardcoded defaults in offensive tools - attackers rarely
+# change them in real engagements.
+# FALSE POSITIVE: None for these specific patterns. No legitimate software
+# uses named pipes with these exact naming conventions.
+title: Sysmon Named Pipe Created Matching C2 Framework Pattern
+event_id: "17"
+description: >
+  A named pipe was created with a name matching patterns used by Cobalt
+  Strike (postex_, msagent_, status_, mojo_), Meterpreter, or other
+  common C2 frameworks. Named pipe names are hardcoded in most offensive
+  tool defaults. Requires Sysmon pipe creation logging (EID 17).
+severity: critical
+confidence: 0.95
+technique: T1071.001
+mitre: Command and Control
+conditions:
+  - field: PipeName
+    contains_any:
+      - "\\postex_"
+      - "\\msagent_"
+      - "\\status_"
+      - "\\mojo_"
+      - "\\meterpreter"
+      - "\\beacon."
+      - "\\pipe_"
+      - "\\cobaltstrike"
+      - "\\wkssvc_"
+      - "\\ntsvcs_"
+      - "\\DserNamePipe"

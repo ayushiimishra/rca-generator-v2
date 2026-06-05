@@ -1,0 +1,50 @@
+# SOURCE: mdecrevoisier windows-active_directory high risk group membership
+#         SigmaHQ win_security_susp_account_manipulation.yml
+# CONTEXT: Adding a compromised account to Domain Admins, Enterprise Admins,
+# or other privileged groups is the final step of privilege escalation before
+# impact. mdecrevoisier categorizes group additions by risk level - this
+# covers the high-risk groups only.
+# The SubjectUserName != the TargetUserName check prevents false positives
+# from users adding themselves (which is blocked by default but can happen
+# with misconfigured permissions).
+# FALSE POSITIVE: Legitimate IT admin adding a new user to DA. Low FP but
+# always investigate - should correlate with ticket/change management.
+title: User Added to High-Privilege AD Security Group
+event_id: "4728"
+event_ids: ["4728", "4732", "4756"]
+description: >
+  A user account was added to a high-privilege Active Directory security group
+  (Domain Admins, Enterprise Admins, Administrators, Schema Admins, Group
+  Policy Creators, DHCP Administrators, Account Operators, etc.).
+  Adding compromised accounts to admin groups is the critical privilege
+  escalation step before impact. Any unexpected addition is high-severity.
+  Source: mdecrevoisier high-risk group membership change rules.
+severity: high
+confidence: 0.80
+technique: T1098
+mitre: Persistence
+conditions:
+  - field: TargetUserName
+    contains_any:
+      - "Domain Admins"
+      - "Enterprise Admins"
+      - "Schema Admins"
+      - "Administrators"
+      - "Group Policy Creator Owners"
+      - "Account Operators"
+      - "Backup Operators"
+      - "Print Operators"
+      - "Server Operators"
+      - "Remote Desktop Users"
+      - "Remote Management Users"
+      - "DHCP Administrators"
+      - "DnsAdmins"
+      - "Exchange Windows Permissions"
+      - "Exchange Organization Administrators"
+  - field: SubjectUserName
+    not_ends_with: "$"
+    not_empty: true
+    not_in:
+      - SYSTEM
+      - LOCAL SERVICE
+      - NETWORK SERVICE

@@ -1,0 +1,44 @@
+# SOURCE: SigmaHQ proc_creation_win_net_recon_commands.yml
+#         mdecrevoisier windows-active_directory domain recon patterns
+#         hayabusa-rules discovery temporal proximity patterns
+# CONTEXT: Individual net/whoami/ipconfig commands are normal admin activity.
+# 4+ different recon commands from the same user in 2 minutes is the
+# attacker "land and pivot" pattern - running a rapid discovery script
+# immediately after initial access.
+# count_in_window groups by IpAddress/WorkstationName from the event data
+# but for process creation, we use a simple time-window burst.
+# The window is 120 seconds which captures the "run everything at once"
+# pattern while filtering daily admin use (which is spread over hours).
+# FALSE POSITIVE: IT admins running diagnostic scripts. The 4-command
+# threshold in 120 seconds is aggressive enough to flag automated scripts.
+title: Discovery Command Burst - Attacker Recon Pattern
+event_id: "4688"
+event_ids: ["4688", "1"]
+description: >
+  Multiple reconnaissance commands (net, whoami, ipconfig, systeminfo,
+  nltest, tasklist) fired in rapid succession indicating automated attacker
+  recon script execution. Individual commands are normal; 4+ in 2 minutes
+  from the same user is the "land and discover" attacker pattern seen
+  immediately after initial access.
+  Source: SigmaHQ net recon commands + mdecrevoisier AD discovery patterns.
+severity: high
+confidence: 0.82
+technique: T1082
+mitre: Discovery
+conditions:
+  - field: Image
+    ends_with_any:
+      - "\\net.exe"
+      - "\\net1.exe"
+      - "\\whoami.exe"
+      - "\\ipconfig.exe"
+      - "\\systeminfo.exe"
+      - "\\tasklist.exe"
+      - "\\nltest.exe"
+      - "\\arp.exe"
+      - "\\nslookup.exe"
+      - "\\netstat.exe"
+      - "\\hostname.exe"
+  - field: count_in_window
+    greater_than: 4
+    window_seconds: 120

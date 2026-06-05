@@ -1,0 +1,36 @@
+# SOURCE: SigmaHQ sysmon_startup_folder_file_write.yml
+#         hayabusa-rules persistence patterns
+# CONTEXT: Sysmon EID 11 fires on file creation events.
+# Executables written to startup folders are a persistence mechanism.
+# Legitimate software installers use proper MSI/setup paths, not direct
+# file writes to startup folders during runtime.
+# FALSE POSITIVE: Some AV/backup tools may write shortcuts to Startup.
+# Added .lnk to scope to catch shortcut-based persistence too.
+title: Executable Written to Startup Folder - Persistence
+event_id: "11"
+description: >
+  An executable or script was written directly to a Windows startup folder.
+  This is a persistence mechanism used by malware to survive reboots.
+  Covers both per-user and all-users startup locations.
+  Legitimate software uses MSI/installer frameworks - not direct file writes.
+  Includes .lnk (shortcut) detection to catch "sticky key" style backdoors.
+severity: high
+confidence: 0.88
+technique: T1547.001
+mitre: Persistence
+conditions:
+  - field: TargetFilename
+    contains_any:
+      - "\\Start Menu\\Programs\\Startup\\"
+      - "\\AppData\\Roaming\\Microsoft\\Windows\\Start Menu\\Programs\\Startup\\"
+      - "\\ProgramData\\Microsoft\\Windows\\Start Menu\\Programs\\Startup\\"
+  - field: TargetFilename
+    ends_with_any:
+      - ".exe"
+      - ".bat"
+      - ".ps1"
+      - ".vbs"
+      - ".js"
+      - ".lnk"
+      - ".dll"
+      - ".hta"

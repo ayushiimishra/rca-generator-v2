@@ -1,0 +1,35 @@
+# SOURCE: mdecrevoisier windows-os event log clearing (command)
+#         SigmaHQ proc_creation_win_wevtutil_clear_logs.yml
+# CONTEXT: wevtutil cl (clear-log) is the command-line method to clear
+# Windows event logs, equivalent to EID 1102 (Security log cleared).
+# EID 1102 only fires for the Security log. wevtutil can clear ANY log
+# including System, Application, PowerShell/Operational (which would
+# erase PowerShell script block logs), and Sysmon logs.
+# Attackers clear logs AFTER completing their operation to remove evidence.
+# FALSE POSITIVE: None. Log clearing via wevtutil during an incident is
+# attacker behavior. Legitimate maintenance uses Group Policy log size limits.
+title: Event Log Clearing via wevtutil (Attacker Evidence Removal)
+event_id: "4688"
+event_ids: ["4688", "1"]
+description: >
+  wevtutil.exe was used to clear Windows event logs. Attackers clear logs
+  after credential dumping, lateral movement, and ransomware deployment
+  to remove forensic evidence. wevtutil cl can clear ANY log including
+  Sysmon and PowerShell/Operational - more dangerous than EID 1102 alone.
+  Often the LAST action before ransomware deployment.
+  Source: mdecrevoisier event log clearing command + SigmaHQ wevtutil rules.
+severity: critical
+confidence: 0.94
+technique: T1070.001
+mitre: Defense Evasion
+conditions:
+  - field: Image
+    ends_with_any:
+      - "\\wevtutil.exe"
+  - field: CommandLine
+    contains_any:
+      - " cl "
+      - " cl\""
+      - "clear-log"
+      - " sl "
+      - "/e:false"

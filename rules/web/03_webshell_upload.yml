@@ -1,0 +1,38 @@
+# SOURCE: SigmaHQ web_webshell_detection.yml patterns
+#         DFIR Report web shell deployment cases
+# CONTEXT: Web shell upload: attacker POSTs a script file (.php/.asp/.aspx)
+# that returns HTTP 200. A tiny 200 response body = command output, not
+# a full page. The method=POST + server-side script extension + HTTP 200
+# combination is the web shell upload signature.
+# Subsequent GETs to the same path with cmd= parameters = execution.
+# FALSE POSITIVE: Legitimate file upload endpoints may accept script files
+# in some CMS systems. Should be very rare with the 200 + small response filter.
+title: Web Shell Upload - POST to Server-Side Script Returning 200
+event_id: "waf_request"
+description: >
+  HTTP POST to a server-side script file extension (.php, .asp, .aspx, .jsp)
+  returned HTTP 200. This is the web shell upload pattern where an attacker
+  uploads a backdoor script for persistent remote command execution.
+  The script extension + POST + 200 combination distinguishes from legitimate
+  file uploads to known upload endpoints.
+  Correlate with subsequent GET requests to the same path with command parameters.
+  Source: SigmaHQ web shell patterns + DFIR Report web shell deployment TTPs.
+severity: critical
+confidence: 0.85
+technique: T1505.003
+mitre: Persistence
+conditions:
+  - field: method
+    equals: "POST"
+  - field: uri
+    ends_with_any:
+      - ".php"
+      - ".asp"
+      - ".aspx"
+      - ".jsp"
+      - ".jspx"
+      - ".cfm"
+      - ".cgi"
+      - ".pl"
+  - field: status
+    equals: "200"

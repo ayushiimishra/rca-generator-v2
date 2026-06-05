@@ -1,0 +1,98 @@
+# SOURCE: SigmaHQ posh_ps_malicious_commandlets.yml (full 160+ commandlet list)
+#         Extracted directly from real Sigma HQ rule content
+# CONTEXT: These are proper names from offensive PowerShell frameworks
+# (PowerSploit, Nishang, PowerView, BloodHound, Empire, CobaltStrike, Rubeus).
+# They are NEVER present in legitimate PowerShell scripts because they are
+# purpose-built offensive tool function names. No false positive risk.
+# Field: ScriptBlockText from EID 4104 (Script Block Logging must be enabled).
+# If your logs don't have EID 4104, none of these will fire.
+title: Malicious PowerShell Offensive Framework Commandlets
+event_id: "4104"
+description: >
+  PowerShell Script Block Logging captured a commandlet name from a known
+  offensive framework (PowerSploit, Nishang, PowerView, BloodHound, Empire,
+  Cobalt Strike, Rubeus, Mimikatz-PS). These are proper function names from
+  red team/attack tools - they never appear in legitimate scripts.
+  Requires Script Block Logging (EID 4104) to be enabled.
+severity: critical
+confidence: 0.98
+technique: T1059.001
+mitre: Execution
+conditions:
+  - field: ScriptBlockText
+    contains_any:
+      # Mimikatz / credential dumping
+      - "Invoke-Mimikatz"
+      - "Invoke-Mimikittenz"
+      - "Invoke-SafetyKatz"
+      - "Invoke-BetterSafetyKatz"
+      - "Invoke-NanoDump"
+      - "Invoke-HandleKatz"
+      - "Invoke-DinvokeKatz"
+      - "Out-Minidump"
+      - "Get-PassHashes"
+      - "Get-LSASecret"
+      - "Get-RemoteCachedCredential"
+      - "Get-RemoteLocalAccountHash"
+      - "Get-VaultCredential"
+      - "Invoke-PowerDump"
+      - "Invoke-PPLDump"
+      # BloodHound / AD recon
+      - "Invoke-BloodHound"
+      - "Invoke-AzureHound"
+      - "SharpHound"
+      - "Invoke-ADRecon"
+      - "Export-ADRExcel"
+      - "Export-ADRCSV"
+      # DCSync / AD attacks
+      - "Invoke-DCSync"
+      - "Get-DomainController"
+      - "Invoke-Kerberoast"
+      - "Get-KerberosAESKey"
+      - "Invoke-Rubeus"
+      - "Invoke-Certify"
+      - "Invoke-Whisker"
+      # Lateral movement
+      - "Invoke-PsExec"
+      - "Invoke-WMIExec"
+      - "Invoke-SMBScanner"
+      - "Invoke-InveighRelay"
+      - "Invoke-Inveigh"
+      - "Invoke-MITM6"
+      - "Invoke-KrbRelay"
+      # Code execution / injection
+      - "Invoke-ReflectivePEInjection"
+      - "Invoke-Shellcode"
+      - "Invoke-DllInjection"
+      - "Invoke-PSInject"
+      - "Invoke-UrbanBishop"
+      - "Invoke-TokenManipulation"
+      - "Invoke-ImpersonatedProcess"
+      - "Invoke-ImpersonateSystem"
+      - "Invoke-BadPotato"
+      - "Invoke-InteractiveSystemPowerShell"
+      # Persistence
+      - "Invoke-ADSBackdoor"
+      - "Add-Persistence"
+      - "Add-RegBackdoor"
+      - "Invoke-Tasksbackdoor"
+      - "Gupt-Backdoor"
+      # Credential access
+      - "Get-GPPPassword"
+      - "Invoke-AllChecks"
+      - "Get-ServiceUnquoted"
+      - "Get-ServiceFilePermission"
+      - "Invoke-ServiceAbuse"
+      - "PowerView"
+      - "PowerUp"
+      - "VolumeShadowCopyTools"
+      # C2 frameworks
+      - "Invoke-PowerShellTCP"
+      - "Invoke-ConPtyShell"
+      - "Start-Dnscat2"
+      - "Invoke-DNSExfiltrator"
+      - "powercat "
+      # Exfil
+      - "Invoke-EgressCheck"
+      - "Do-Exfiltration"
+      - "Add-Exfiltration"

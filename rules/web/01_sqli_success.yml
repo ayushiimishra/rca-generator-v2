@@ -1,0 +1,29 @@
+# SOURCE: SigmaHQ web_sql_injection_in_access_logs.yml
+#         Extended with response size context from Elastic detection rules
+# CONTEXT: Your waf_parser.py already detects SQL injection patterns
+# and sets attack_type="sql_injection". This rule operates on WAF events
+# where the existing detection found SQLi AND the response was HTTP 200
+# (successful) AND returned significant data (>5KB = likely data exfil).
+# SQLi attempts returning small responses = blocked/error.
+# SQLi returning large 200 responses = successful data extraction.
+# The confidence increases with larger response sizes.
+# FALSE POSITIVE: Internal vulnerability scanners. Add scanner IP exclusions.
+title: SQL Injection Attack - Successful Data Response
+event_id: "waf_attack"
+description: >
+  SQL injection was detected in web request AND the server returned HTTP 200
+  with significant data (>2KB response). This indicates successful SQL injection
+  where data was actually extracted, not just an error response. Large response
+  bodies from SQLi attempts confirm data exfiltration via web tier.
+  Source: SigmaHQ web SQLi detection + response size analysis.
+  Correlate with EVTX logs for the same source IP for full attack chain.
+severity: critical
+confidence: 0.88
+technique: T1190
+mitre: Initial Access
+conditions:
+  - field: attack_type
+    contains_any:
+      - "sql_injection"
+  - field: status
+    equals: "200"

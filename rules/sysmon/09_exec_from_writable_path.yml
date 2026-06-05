@@ -1,0 +1,54 @@
+# SOURCE: SigmaHQ proc_creation_win_susp_exec_path_temp.yml
+#         mdecrevoisier windows-os suspicious path execution
+#         hayabusa-rules evasion patterns
+# CONTEXT: Legitimate software installs to Program Files or Windows directories.
+# Executables running from Temp, AppData, Downloads, or ProgramData (without
+# a known vendor subfolder) are almost always malware dropping a second stage.
+# The not_contains_any exclusion removes known legitimate vendors.
+# FALSE POSITIVE: Some legitimate auto-updating software (Chrome, Firefox,
+# some enterprise agents) temporarily writes to AppData. The not_contains_any
+# list covers the most common. Add your org's software as needed.
+title: Executable Running From User-Writable Path (Malware Staging)
+event_id: "1"
+event_ids: ["1", "4688"]
+description: >
+  A process was launched from a user-writable directory (Temp, AppData,
+  Downloads, ProgramData, Public). Legitimate software runs from Program Files
+  or Windows directories. Execution from writable paths indicates malware
+  that dropped a payload before executing it - common in second-stage loaders,
+  ransomware droppers, and post-exploitation tools.
+severity: high
+confidence: 0.82
+technique: T1059.001
+mitre: Execution
+conditions:
+  - field: Image
+    contains_any:
+      - "\\AppData\\Local\\Temp\\"
+      - "\\AppData\\Roaming\\"
+      - "\\Users\\Public\\"
+      - "\\Downloads\\"
+      - "C:\\Windows\\Temp\\"
+      - "C:\\ProgramData\\"
+      - "C:\\Temp\\"
+      - "C:\\$Recycle.Bin\\"
+  - field: Image
+    ends_with_any:
+      - ".exe"
+      - ".dll"
+      - ".bat"
+      - ".ps1"
+      - ".vbs"
+  - field: Image
+    not_contains_any:
+      - "\\Google\\Chrome\\"
+      - "\\Mozilla Firefox\\"
+      - "\\Microsoft\\EdgeUpdate\\"
+      - "\\Teams\\"
+      - "\\Slack\\"
+      - "\\Zoom\\"
+      - "\\OneDrive\\"
+      - "\\Windows\\SoftwareDistribution\\"
+      - "\\ProgramData\\Microsoft\\Windows Defender\\"
+      - "\\ProgramData\\CrowdStrike\\"
+      - "\\ProgramData\\Carbon Black\\"

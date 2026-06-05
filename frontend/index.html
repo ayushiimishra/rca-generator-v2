@@ -598,24 +598,22 @@ body {
   <!-- UPLOAD -->
   <div class="card" id="uploadSection">
     <div class="card-title">Upload Log Files</div>
-    <div class="upload-grid">
-      <div class="upload-box" id="evtxBox">
-        <input type="file" id="evtxFile" accept=".evtx"
+    <div class="upload-grid" style="grid-template-columns:1fr">
+      <div class="upload-box" id="logBox"
+           ondragover="event.preventDefault();this.classList.add('has-file')"
+           ondragleave="this.classList.remove('has-file')"
+           ondrop="handleDrop(event)">
+        <input type="file" id="logFiles"
+               accept=".evtx,.log,.txt,.csv"
                multiple
-               onchange="fileSelected('evtx')">
-        <div class="upload-icon">🪟</div>
-        <div class="upload-label">Windows Event Log</div>
-        <div class="upload-hint">.evtx · multiple files ok</div>
-        <div class="upload-fname hidden" id="evtxName"></div>
-      </div>
-      <div class="upload-box" id="wafBox">
-        <input type="file" id="wafFile" accept=".log,.txt"
-               multiple
-               onchange="fileSelected('waf')">
-        <div class="upload-icon">🌐</div>
-        <div class="upload-label">Web Access Log</div>
-        <div class="upload-hint">.log · multiple files ok</div>
-        <div class="upload-fname hidden" id="wafName"></div>
+               onchange="fileSelected()">
+        <div class="upload-icon">📁</div>
+        <div class="upload-label">Drop Any Log Files Here</div>
+        <div class="upload-hint">
+          .evtx Windows logs · .log WAF/DNS logs · .csv exports
+          · mix and match · multiple files ok
+        </div>
+        <div class="upload-fname hidden" id="logNames"></div>
       </div>
     </div>
     <button class="btn-analyze" id="analyzeBtn"
@@ -666,36 +664,37 @@ let currentReport = null;
 let pollInterval  = null;
 let sessionId     = null;
 
-function fileSelected(type) {
-  const input = document.getElementById(
-    type === 'evtx' ? 'evtxFile' : 'wafFile'
-  );
-  const box   = document.getElementById(
-    type === 'evtx' ? 'evtxBox' : 'wafBox'
-  );
-  const name  = document.getElementById(
-    type === 'evtx' ? 'evtxName' : 'wafName'
-  );
+function fileSelected() {
+  const input = document.getElementById('logFiles');
+  const box   = document.getElementById('logBox');
+  const names = document.getElementById('logNames');
   if (input.files.length > 0) {
     box.classList.add('has-file');
     if (input.files.length === 1) {
-      name.textContent = input.files[0].name;
+      names.textContent = input.files[0].name;
     } else {
-      name.textContent =
-        input.files.length + ' files selected';
+      names.textContent = input.files.length + ' files selected: '
+        + Array.from(input.files).map(f => f.name).join(', ');
     }
-    name.classList.remove('hidden');
+    names.classList.remove('hidden');
   }
   updateAnalyzeBtn();
 }
 
+function handleDrop(event) {
+  event.preventDefault();
+  const box = document.getElementById('logBox');
+  box.classList.remove('has-file');
+  const input = document.getElementById('logFiles');
+  const dt = new DataTransfer();
+  for (const f of event.dataTransfer.files) { dt.items.add(f); }
+  input.files = dt.files;
+  fileSelected();
+}
+
 function updateAnalyzeBtn() {
-  const evtx =
-    document.getElementById('evtxFile').files.length;
-  const waf  =
-    document.getElementById('wafFile').files.length;
-  document.getElementById('analyzeBtn').disabled =
-    !evtx && !waf;
+  const count = document.getElementById('logFiles').files.length;
+  document.getElementById('analyzeBtn').disabled = count === 0;
 }
 
 function setStep(n) {
@@ -716,26 +715,15 @@ function updateProgress(pct, msg) {
 }
 
 async function startAnalysis() {
-  const evtx = document.getElementById('evtxFile').files[0];
-  const waf  = document.getElementById('wafFile').files[0];
-
   document.getElementById('errorMsg').classList.add('hidden');
   document.getElementById('uploadSection').classList.add('hidden');
   document.getElementById('progressSection').classList.remove('hidden');
   document.getElementById('reportSection').classList.add('hidden');
   updateProgress(5, 'Uploading files...');
 
-  const evtxInput =
-    document.getElementById('evtxFile');
-  const wafInput  =
-    document.getElementById('wafFile');
+  const logInput = document.getElementById('logFiles');
   const fd = new FormData();
-  for (const f of evtxInput.files) {
-    fd.append('evtx_files', f);
-  }
-  for (const f of wafInput.files) {
-    fd.append('waf_files', f);
-  }
+  for (const f of logInput.files) { fd.append('log_files', f); }
 
   try {
     const res  = await fetch('/api/analyze', {
@@ -1556,12 +1544,9 @@ function newAnalysis() {
   currentReport = null;
   sessionId     = null;
   if (pollInterval) clearInterval(pollInterval);
-  document.getElementById('evtxFile').value = '';
-  document.getElementById('wafFile').value  = '';
-  document.getElementById('evtxBox').classList.remove('has-file');
-  document.getElementById('wafBox').classList.remove('has-file');
-  document.getElementById('evtxName').classList.add('hidden');
-  document.getElementById('wafName').classList.add('hidden');
+  document.getElementById('logFiles').value = '';
+  document.getElementById('logBox').classList.remove('has-file');
+  document.getElementById('logNames').classList.add('hidden');
   document.getElementById('analyzeBtn').disabled = true;
   document.getElementById('reportSection').classList.add('hidden');
   document.getElementById('progressSection').classList.add('hidden');

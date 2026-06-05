@@ -1,0 +1,38 @@
+# SOURCE: SigmaHQ sysmon_create_remote_thread_target_sensitive_process.yml
+#         mdecrevoisier windows-os patterns
+# CONTEXT: Sysmon EID 8 fires when one process creates a thread in another.
+# Injection into lsass, winlogon, svchost, browsers signals process injection
+# for credential theft or privilege escalation.
+# The legitimate callers (csrss, werfault, ntoskrnl) operate at kernel level
+# and do not appear in Sysmon EID 8 in practice.
+# FALSE POSITIVE RISK: Very low. Remote thread injection into these targets
+# has no legitimate software use case.
+title: Sysmon Remote Thread Injection Into Sensitive Process
+event_id: "8"
+description: >
+  A process created a remote thread inside a high-value target process
+  (LSASS, winlogon, svchost, browsers). This indicates process injection
+  for credential theft (LSASS), persistence (winlogon), or code execution
+  (svchost, browsers). Used by Mimikatz, Cobalt Strike, Meterpreter, and
+  other offensive tools. Requires Sysmon EID 8 logging enabled.
+severity: critical
+confidence: 0.93
+technique: T1055.003
+mitre: Defense Evasion
+conditions:
+  - field: TargetImage
+    ends_with_any:
+      - "\\lsass.exe"
+      - "\\winlogon.exe"
+      - "\\svchost.exe"
+      - "\\explorer.exe"
+      - "\\chrome.exe"
+      - "\\firefox.exe"
+      - "\\msedge.exe"
+      - "\\iexplore.exe"
+  - field: SourceImage
+    not_ends_with_any:
+      - "\\csrss.exe"
+      - "\\werfault.exe"
+      - "\\ntoskrnl.exe"
+      - "\\System"

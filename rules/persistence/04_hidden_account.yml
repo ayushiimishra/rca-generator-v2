@@ -1,0 +1,30 @@
+# SOURCE: mdecrevoisier windows-active_directory "Hidden account creation (with fast deletion)"
+# CONTEXT: Attackers create a backdoor account for persistent access,
+# note down its hash/password, then quickly delete it to remove evidence.
+# The account may still be usable as a pass-the-hash target even after
+# "deletion" in some AD configurations.
+# mdecrevoisier specifically documents this pattern as an attacker technique
+# for creating access without leaving long-lived account artifacts.
+# EID 4720 = account created, EID 4726 = account deleted.
+# FALSE POSITIVE: Very rare. IT helpdesk creating and quickly deleting test
+# accounts would trigger this. Should always be investigated.
+title: Hidden Backdoor Account - Created Then Rapidly Deleted
+event_id: "4726"
+description: >
+  A user account was deleted very shortly after creation, indicating a
+  backdoor account creation technique where the attacker creates an account,
+  captures its credentials (or pre-sets them), then deletes the visible
+  artifact. The account hash may remain usable for pass-the-hash attacks.
+  Source: mdecrevoisier "Hidden account creation with fast deletion" pattern.
+severity: high
+confidence: 0.83
+technique: T1136.001
+mitre: Persistence
+conditions:
+  - field: SubjectUserName
+    not_ends_with: "$"
+    not_empty: true
+    not_in:
+      - SYSTEM
+      - LOCAL SERVICE
+      - NETWORK SERVICE

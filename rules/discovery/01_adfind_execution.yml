@@ -1,0 +1,28 @@
+# SOURCE: SigmaHQ proc_creation_win_pua_adfind_susp_usage.yml
+#         mdecrevoisier windows-active_directory SPN enumeration patterns
+# CONTEXT: ADFind.exe is a third-party AD query tool that has zero legitimate
+# reason to exist on a workstation. It is heavily used by ransomware operators
+# (LockBit, BlackCat, Conti) and APT groups for AD enumeration.
+# Any execution on a non-DC host is suspicious. On a DC it should correlate
+# with a change management record.
+# FALSE POSITIVE: Legitimate AD admins use ADFind. Should be extremely rare
+# on workstations - investigate all workstation hits as high priority.
+title: ADFind Execution - Active Directory Reconnaissance Tool
+event_id: "4688"
+event_ids: ["4688", "1"]
+description: >
+  ADFind.exe was executed for Active Directory reconnaissance. ADFind is a
+  third-party tool with no built-in Windows equivalent that is used
+  extensively by ransomware affiliates (LockBit, BlackCat, Conti) and APT
+  groups to enumerate AD users, groups, computers, trusts, and GPOs.
+  Presence of adfind.exe on a non-DC host is itself suspicious.
+  Source: SigmaHQ ADFind suspicious usage + mdecrevoisier AD recon rules.
+severity: high
+confidence: 0.88
+technique: T1018
+mitre: Discovery
+conditions:
+  - field: Image
+    ends_with_any:
+      - "\\AdFind.exe"
+      - "\\adfind.exe"

@@ -1,0 +1,31 @@
+# SOURCE: mdecrevoisier windows-firewall "Any/any firewall rule created"
+#         SigmaHQ win_firewall_as_add_rule.yml
+# CONTEXT: A firewall rule allowing Any source to Any destination is a
+# network exposure rule. Attackers create these to enable C2 communication
+# or to expose services for their use.
+# EID 2004 fires when a new Windows Firewall rule is added.
+# "Any/any" = RemoteAddress=Any AND LocalPort=Any/specific-port combination.
+# FALSE POSITIVE: IT admins troubleshooting connectivity sometimes add
+# overly permissive rules. Should be reviewed and removed after troubleshooting.
+title: Windows Firewall Any/Any Rule Created (Network Exposure)
+event_id: "2004"
+description: >
+  A Windows Firewall rule was added with broad allow permissions (Any source
+  to Any destination). Attackers create permissive firewall rules to enable
+  C2 communication, expose RDP, or allow lateral movement tools.
+  EID 2004 is from the Windows Firewall with Advanced Security log.
+  Source: mdecrevoisier windows-firewall any/any rule + SigmaHQ firewall rules.
+severity: high
+confidence: 0.80
+technique: T1562.004
+mitre: Defense Evasion
+conditions:
+  - field: RuleDirection
+    equals_any:
+      - "Inbound"
+      - "2"
+  - field: RemoteAddresses
+    contains_any:
+      - "Any"
+      - "*"
+      - "0.0.0.0/0"

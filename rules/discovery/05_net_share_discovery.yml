@@ -1,0 +1,40 @@
+# SOURCE: mdecrevoisier windows-active_directory network share discovery
+#         SigmaHQ proc_creation_win_net_share_recon.yml
+# CONTEXT: "net view" and "net share" enumerate network shares across
+# the domain - used by attackers to identify file servers and lateral
+# movement targets. "net use" mounting remote shares can indicate
+# credential-based lateral movement.
+# The combination of net view + /domain flag is the attacker pattern
+# for domain-wide share enumeration.
+# FALSE POSITIVE: Legitimate network scanning tools and admin scripts.
+# net view /domain on a workstation from a standard user account
+# is the suspicious pattern - on servers from admin accounts is lower FP.
+title: Network Share Discovery and Enumeration
+event_id: "4688"
+event_ids: ["4688", "1"]
+description: >
+  net.exe was used to enumerate network shares (net view), list local shares
+  (net share), or mount remote shares (net use). Attackers enumerate shares
+  to identify file servers, data repositories, and lateral movement targets.
+  net view /domain gives a complete list of domain computers with shared
+  resources - commonly the first step in choosing lateral movement targets.
+  Source: mdecrevoisier share discovery + SigmaHQ net share recon.
+severity: medium
+confidence: 0.72
+technique: T1135
+mitre: Discovery
+conditions:
+  - field: Image
+    ends_with_any:
+      - "\\net.exe"
+      - "\\net1.exe"
+  - field: CommandLine
+    contains_any:
+      - " view"
+      - " share"
+      - " use "
+  - field: CommandLine
+    contains_any:
+      - "/domain"
+      - "\\\\*"
+      - " /all"

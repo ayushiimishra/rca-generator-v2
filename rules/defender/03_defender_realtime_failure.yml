@@ -1,0 +1,23 @@
+# SOURCE: mdecrevoisier windows-defender real time protection failure
+# CONTEXT: EID 3002 fires when Defender's real-time protection component
+# fails or is stopped. This indicates either BYOVD (Bring Your Own Vulnerable
+# Driver) that killed the Defender kernel component, or a service crash
+# after being forcibly terminated. This is distinct from EID 5007 (config
+# change) - this event means protection actually STOPPED functioning.
+# mdecrevoisier specifically identifies this as a critical evasion indicator.
+# FALSE POSITIVE: Defender can fail on resource-constrained systems.
+# A 3002 event followed by suspicious activity = attacker action.
+title: Windows Defender Real-Time Protection Failure
+event_id: "3002"
+description: >
+  Windows Defender real-time protection component failed or stopped.
+  This can indicate BYOVD attacks that kill the Defender kernel component,
+  or forceful service termination. A Defender failure followed by process
+  creation or persistence events = attacker successfully blinded AV.
+  EID 3002 is from Windows Defender Operational log.
+  Source: mdecrevoisier defender real-time protection failure rule.
+severity: high
+confidence: 0.78
+technique: T1562.001
+mitre: Defense Evasion
+conditions: []

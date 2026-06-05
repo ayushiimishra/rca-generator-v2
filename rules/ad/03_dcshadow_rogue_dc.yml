@@ -1,0 +1,34 @@
+# SOURCE: mdecrevoisier windows-active_directory DCShadow rules
+#         SigmaHQ win_security_dcshadow.yml
+# CONTEXT: DCShadow (Mimikatz dcshadow module) temporarily registers a
+# rogue Domain Controller to inject arbitrary AD object changes.
+# EID 5137 fires when an AD object is created; EID 5141 when deleted.
+# A new server object appearing and disappearing under Sites/Servers
+# with rapid create+delete is the DCShadow fingerprint.
+# The object class "server" under the NTDS Sites container is only
+# legitimate when a real DC is promoted/demoted (planned change).
+# FALSE POSITIVE: Actual DC promotions fire this but are planned events.
+# Alert on unexpected occurrences or correlate with change management.
+title: DCShadow - Rogue Domain Controller Object Created
+event_id: "5137"
+event_ids: ["5137", "5141"]
+description: >
+  An AD server object was created or deleted under the Sites container,
+  indicating a possible DCShadow attack. Mimikatz's 'lsadump::dcshadow'
+  temporarily registers a rogue DC to inject arbitrary AD changes without
+  proper audit trails. The object creation (5137) followed by deletion (5141)
+  is the canonical DCShadow lifecycle.
+  Source: mdecrevoisier windows-active_directory DCShadow rule.
+severity: critical
+confidence: 0.88
+technique: T1207
+mitre: Defense Evasion
+conditions:
+  - field: ObjectClass
+    contains_any:
+      - "server"
+      - "nTDSDSA"
+  - field: ObjectDN
+    contains_any:
+      - "CN=Sites"
+      - "CN=Configuration"

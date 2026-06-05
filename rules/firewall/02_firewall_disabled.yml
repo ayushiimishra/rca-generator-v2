@@ -1,0 +1,33 @@
+# SOURCE: mdecrevoisier windows-firewall deactivation (cmd)
+#         SigmaHQ proc_creation_win_susp_firewall_disable.yml
+# CONTEXT: Disabling Windows Firewall via netsh removes the network
+# protection layer. Attackers disable it to enable inbound connections
+# for C2 or lateral movement tools. The "allprofiles state off" pattern
+# disables all three profiles (Domain, Private, Public) simultaneously.
+# FALSE POSITIVE: IT admins troubleshooting. The "allprofiles state off"
+# combination is far more suspicious than single-profile changes.
+title: Windows Firewall Disabled via netsh Command
+event_id: "4688"
+event_ids: ["4688", "1"]
+description: >
+  Windows Firewall was disabled via netsh command. Attackers disable the
+  firewall to allow inbound connections for backdoors, reverse shells, or
+  lateral movement tools. "allprofiles state off" disables all firewall
+  profiles simultaneously - the most comprehensive evasion method.
+  Source: mdecrevoisier firewall deactivation (cmd) rule.
+severity: high
+confidence: 0.86
+technique: T1562.004
+mitre: Defense Evasion
+conditions:
+  - field: Image
+    ends_with_any:
+      - "\\netsh.exe"
+  - field: CommandLine
+    contains_all:
+      - "firewall"
+      - "state"
+  - field: CommandLine
+    contains_any:
+      - "off"
+      - "disable"

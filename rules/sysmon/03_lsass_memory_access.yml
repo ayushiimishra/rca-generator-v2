@@ -1,0 +1,53 @@
+# SOURCE: SigmaHQ proc_access_win_lsass_memdump.yml (access masks)
+#         mdecrevoisier windows-lsass/ pattern
+#         Hayabusa-rules credential access patterns
+# CONTEXT: Sysmon EID 10 fires when one process opens another for memory access.
+# The GrantedAccess masks below are used exclusively by credential dumping tools
+# (Mimikatz, NanoDump, ProcDump, Cobalt Strike). Values derived from
+# CAR-2019-04-004 and JPCERTCC research.
+# FALSE POSITIVE EXCLUSIONS (from SigmaHQ filter list):
+#   MsMpEng.exe - Windows Defender AV scanner
+#   csrss.exe   - Windows Client Server Runtime (OS component)
+#   werfault.exe - Windows Error Reporting
+#   taskmgr.exe - Task Manager (only 0x0400 access, not dump masks)
+#   perfmon.exe - Performance Monitor
+title: Sysmon LSASS Memory Access - Credential Dumping
+event_id: "10"
+description: >
+  A process opened lsass.exe with memory-read access masks used by
+  credential dumping tools (Mimikatz, NanoDump, Procdump, Cobalt Strike).
+  Specific GrantedAccess values 0x1010, 0x1410, 0x1418, 0x1438, 0x143a,
+  0x1fffff combine PROCESS_VM_READ with PROCESS_QUERY_INFORMATION in ways
+  that only make sense for extracting credentials from LSASS memory.
+  Requires Sysmon with ProcessAccess rule targeting lsass.exe.
+severity: critical
+confidence: 0.91
+technique: T1003.001
+mitre: Credential Access
+conditions:
+  - field: TargetImage
+    ends_with_any:
+      - "\\lsass.exe"
+  - field: GrantedAccess
+    contains_any:
+      - "0x1010"
+      - "0x1410"
+      - "0x1418"
+      - "0x1438"
+      - "0x143a"
+      - "0x1f0fff"
+      - "0x1f1fff"
+      - "0x1f2fff"
+      - "0x1f3fff"
+      - "0x40"
+      - "0x100000"
+  - field: SourceImage
+    not_contains_any:
+      - "\\MsMpEng.exe"
+      - "\\csrss.exe"
+      - "\\werfault.exe"
+      - "\\taskmgr.exe"
+      - "\\perfmon.exe"
+      - "\\wmiprvse.exe"
+      - "\\svchost.exe"
+      - "\\lsm.exe"

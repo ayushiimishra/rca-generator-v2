@@ -1,0 +1,29 @@
+# SOURCE: mdecrevoisier windows-defender exclusion added (native)
+#         SigmaHQ win_defender_exclusion_added.yml
+# CONTEXT: EID 5007 (Microsoft-Windows-Windows Defender/Operational channel)
+# fires when Defender configuration changes. Adding an exclusion path means
+# Defender will NOT scan that folder - attackers add their payload folder.
+# This is often done right before dropping the payload: add exclusion → drop
+# payload → execute. The exclusion makes the malware invisible to Defender.
+# FALSE POSITIVE: IT admins adding legitimate exclusions for software
+# compatibility. Should correlate with change management.
+title: Windows Defender Exclusion Path Added
+event_id: "5007"
+description: >
+  Windows Defender configuration was changed to add an exclusion path,
+  extension, or process. Attackers add exclusions before dropping malware
+  so Defender ignores the payload directory. This is a pre-deployment step
+  in ransomware attacks (LockBit, BlackCat documented this pattern).
+  EID 5007 is from the Windows Defender operational log channel.
+  Source: mdecrevoisier defender exclusion added rule.
+severity: high
+confidence: 0.83
+technique: T1562.001
+mitre: Defense Evasion
+conditions:
+  - field: NewValue
+    contains_any:
+      - "ExclusionPath"
+      - "ExclusionExtension"
+      - "ExclusionProcess"
+      - "ExclusionIpAddress"

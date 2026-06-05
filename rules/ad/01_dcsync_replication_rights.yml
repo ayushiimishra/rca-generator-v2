@@ -1,0 +1,43 @@
+# SOURCE: mdecrevoisier windows-active_directory/win-ad-replication privilege accessed
+#         SigmaHQ win_security_dcsync.yml
+#         Splunk detection research on EID 4662 + Properties GUIDs
+# CONTEXT: EID 4662 fires when a DS object is accessed. DCSync is detected
+# when a NON-machine account accesses the domain root object with the three
+# specific GUIDs that represent AD replication rights.
+# GUIDs verified from Microsoft documentation:
+#   1131f6aa = DS-Replication-Get-Changes
+#   1131f6ad = DS-Replication-Get-Changes-All (includes secrets - the dangerous one)
+#   89e95b76 = DS-Replication-Get-Changes-In-Filtered-Set
+# WITHOUT these GUIDs, EID 4662 fires on thousands of legitimate AD operations.
+# AccessMask 0x100 = Control_Access - the specific mask for replication rights.
+# FALSE POSITIVE: Domain Controllers themselves ($) are excluded.
+# Legitimate AD sync tools (AAD Connect, ADMT) run as machine accounts.
+title: DCSync Attack - AD Replication Rights Accessed by Non-Machine Account
+event_id: "4662"
+description: >
+  A non-machine account accessed Active Directory replication rights
+  (DS-Replication-Get-Changes GUIDs) via EID 4662. This is the definitive
+  indicator of a DCSync attack allowing credential hash extraction from
+  any AD account without code execution on a DC.
+  Source: mdecrevoisier + SigmaHQ DCSync rules. Requires 'Audit Directory
+  Service Access' policy enabled on Domain Controllers.
+severity: critical
+confidence: 0.93
+technique: T1003.006
+mitre: Credential Access
+conditions:
+  - field: AccessMask
+    equals: "0x100"
+  - field: Properties
+    contains_any:
+      - "1131f6aa-9c07-11d1-f79f-00c04fc2dcd2"
+      - "1131f6ad-9c07-11d1-f79f-00c04fc2dcd2"
+      - "89e95b76-444d-4c62-991a-0facbeda640c"
+  - field: SubjectUserName
+    not_ends_with: "$"
+    not_empty: true
+    not_in:
+      - SYSTEM
+      - LOCAL SERVICE
+      - NETWORK SERVICE
+      - ANONYMOUS LOGON

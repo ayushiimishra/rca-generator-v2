@@ -1,0 +1,38 @@
+# SOURCE: SigmaHQ proc_creation_win_susp_exfil_tools.yml
+#         DFIR Report ransomware exfil tools 2024/2025
+# CONTEXT: Consumer cloud sync and FTP tools have no business running on
+# Windows servers. MEGAsync/MEGAcmd, FileZilla, WinSCP are used by
+# ransomware affiliates (LockBit, BlackCat, Karakurt) for data exfiltration.
+# Symantec Ransomware 2025 report confirms FreeFileSync and FileZilla
+# specifically used in ransomware incidents.
+# A user running these on their workstation is lower priority.
+# A service account or SYSTEM running these = confirmed exfiltration.
+# FALSE POSITIVE: FileZilla/WinSCP are legitimate FTP clients for IT.
+# On servers vs workstations determines FP likelihood.
+title: Data Exfiltration Tools Executed (MEGAsync/FileZilla/WinSCP)
+event_id: "4688"
+event_ids: ["4688", "1"]
+description: >
+  A consumer cloud sync or FTP client associated with data exfiltration
+  was executed. MEGAsync, FileZilla, WinSCP, and FreeFileSync are used
+  by ransomware affiliates (LockBit, BlackCat, Karakurt) to exfiltrate
+  data before ransomware deployment. Confirmed in Symantec 2025 ransomware
+  report. Execution from server context or by service account = critical.
+  Source: SigmaHQ exfil tools + DFIR Report 2024/2025 data theft TTPs.
+severity: high
+confidence: 0.80
+technique: T1048
+mitre: Exfiltration
+conditions:
+  - field: Image
+    ends_with_any:
+      - "\\MEGAsync.exe"
+      - "\\MEGAcmdServer.exe"
+      - "\\megacmd.exe"
+      - "\\FileZilla.exe"
+      - "\\filezilla.exe"
+      - "\\WinSCP.exe"
+      - "\\winscp.exe"
+      - "\\pscp.exe"
+      - "\\FreeFileSync.exe"
+      - "\\freefilesync.exe"

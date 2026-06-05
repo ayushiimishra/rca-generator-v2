@@ -1,0 +1,34 @@
+# SOURCE: SigmaHQ sysmon_image_load_susp_unsigned_dll.yml
+#         mdecrevoisier windows-os DLL sideloading patterns
+# CONTEXT: DLL sideloading places a malicious DLL where a legitimate process
+# will load it. The DLL is always unsigned (no valid code signing certificate)
+# and placed in a user-writable path. This EID requires Sysmon ImageLoad
+# logging which captures DLL load events with signature information.
+# Signed=false is the critical indicator - Microsoft and legitimate vendors
+# sign their DLLs.
+# FALSE POSITIVE: Some legacy or in-house developed software ships unsigned.
+# The path restriction (user-writable) limits FP to unusual cases.
+title: Sysmon Unsigned DLL Loaded From User-Writable Path (DLL Sideloading)
+event_id: "7"
+description: >
+  An unsigned DLL was loaded from a user-writable directory (Temp, AppData,
+  Downloads, ProgramData). This indicates DLL sideloading or hijacking where
+  an attacker placed a malicious DLL for a legitimate process to load.
+  The Signed=false field confirms no valid code signing certificate.
+  Common technique used by APT groups and ransomware affiliates.
+severity: high
+confidence: 0.85
+technique: T1574.002
+mitre: Defense Evasion
+conditions:
+  - field: Signed
+    equals: "false"
+  - field: ImageLoaded
+    contains_any:
+      - "\\AppData\\Local\\Temp\\"
+      - "\\AppData\\Roaming\\"
+      - "\\Users\\Public\\"
+      - "\\Downloads\\"
+      - "C:\\Windows\\Temp\\"
+      - "C:\\ProgramData\\"
+      - "C:\\Temp\\"

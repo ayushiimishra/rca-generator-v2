@@ -1,0 +1,28 @@
+# SOURCE: dns_parser.py built-in DGA detection (entropy + consonant run heuristic)
+#         SigmaHQ dns_query_dga_detection.yml patterns
+# CONTEXT: Your dns_parser.py already implements DGA detection via:
+# 1. High entropy (>3.5 bits) in first label
+# 2. Consonant run of 5+ chars in first label
+# DGA domains are used by malware for C2 - a new domain is generated daily
+# from an algorithm, so defenders can't pre-block all C2 domains.
+# Massive NXDOMAIN storms (many DGA queries before the "live" domain found)
+# are also a DGA indicator.
+# FALSE POSITIVE: Very low. Human-readable domains have entropy <3.0.
+# Some marketing tracking domains have high entropy but pass the consonant test.
+title: DGA Domain Query Detected - Possible C2 Beacon
+event_id: "dns_query"
+description: >
+  DNS query for a likely DGA (Domain Generation Algorithm) domain, indicating
+  malware C2 communication. DGA generates pseudo-random domain names from
+  an algorithm - high entropy and unusual consonant patterns distinguish
+  DGA from legitimate domains.
+  Detection via dns_parser.py DGA heuristic (entropy + consonant analysis).
+  Source: dns_parser.py built-in detection + SigmaHQ DGA detection patterns.
+severity: high
+confidence: 0.82
+technique: T1568.002
+mitre: Command and Control
+conditions:
+  - field: detections
+    contains_any:
+      - "dga"

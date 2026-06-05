@@ -1,0 +1,26 @@
+# SOURCE: mdecrevoisier windows-rdp discovery performed on multiple hosts
+#         SigmaHQ win_rdp_incoming_from_non_rdp_host.yml
+# CONTEXT: EID 131 is from Microsoft-Windows-TerminalServices-RemoteConnectionManager/Operational
+# It fires on EVERY RDP connection attempt. A SINGLE source IP connecting
+# to multiple different hosts' RDP service = lateral movement scanning.
+# mdecrevoisier specifically identifies this as "RDP reconnaissance" where
+# an attacker tests which hosts accept RDP before attempting credential attacks.
+# count_in_window tracks how many times the same IP appears in EID 131.
+# FALSE POSITIVE: Jump servers that forward RDP to many targets would
+# appear here. Add your jump server IPs to exclusions if needed.
+title: RDP Discovery Scan - Single Source Attempting Multiple Hosts
+event_id: "131"
+description: >
+  Multiple RDP connection attempts from the same source IP to this host
+  and/or multiple hosts. This indicates RDP discovery scanning where an
+  attacker enumerates which hosts accept RDP connections before credential
+  attacks. EID 131 from TerminalServices-RemoteConnectionManager log.
+  Source: mdecrevoisier RDP discovery on multiple hosts rule.
+severity: high
+confidence: 0.83
+technique: T1046
+mitre: Discovery
+conditions:
+  - field: count_in_window
+    greater_than: 5
+    window_seconds: 300

@@ -1,0 +1,54 @@
+# SOURCE: mdecrevoisier windows-bits suspicious BITS activity
+#         SigmaHQ win_bits_client_new_transfer_via_uncommon_tld.yml
+#         win_bits_client_download_file_sharing_domains.yml
+# CONTEXT: BITS (Background Intelligent Transfer Service) is used by Windows
+# Update and SCCM legitimately. Attackers abuse it because:
+# 1. Downloads persist through reboots
+# 2. Traffic blends with Windows Update
+# 3. Can be used as C2 channel
+# mdecrevoisier tracks high data downloads via BITS (EID 60).
+# SigmaHQ tracks downloads to/from unusual TLDs and file-sharing domains.
+# The RemoteName filter excludes known Microsoft/CDN domains.
+# FALSE POSITIVE: Legitimate software using BITS for downloads (common).
+# The domain exclusion list in the filter removes known legitimate sources.
+title: BITS Job Downloading from Suspicious Domain or File-Sharing Site
+event_id: "59"
+event_ids: ["59", "60", "16403"]
+description: >
+  A BITS transfer job was created to download from a suspicious domain,
+  file-sharing website, or unusual TLD. BITS is abused for persistent
+  malware delivery because downloads survive reboots and blend with
+  legitimate Windows Update traffic.
+  File-sharing domains (pastebin, github gists, discord CDN) are commonly
+  used for payload staging.
+  Source: mdecrevoisier BITS suspicious activity + SigmaHQ BITS TLD rules.
+severity: high
+confidence: 0.80
+technique: T1197
+mitre: Defense Evasion
+conditions:
+  - field: RemoteName
+    contains_any:
+      - "pastebin.com"
+      - "ghostbin"
+      - "hastebin"
+      - "paste.ee"
+      - "anonfiles"
+      - "cdn.discordapp.com/attachments"
+      - "raw.githubusercontent.com"
+      - "gist.githubusercontent.com"
+      - "transfer.sh"
+      - "ufile.io"
+      - "mega.nz"
+      - "sendspace.com"
+      - "mediafire.com"
+      - "dropmefiles"
+      - "privatlab"
+  - field: RemoteName
+    not_contains_any:
+      - ".microsoft.com"
+      - ".windowsupdate.com"
+      - ".windows.com"
+      - "update.microsoft"
+      - ".sfx.ms"
+      - "azureedge.net"

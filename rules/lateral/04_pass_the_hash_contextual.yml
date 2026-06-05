@@ -1,0 +1,46 @@
+# SOURCE: SigmaHQ win_security_pass_the_hash.yml (contextual improvement)
+#         mdecrevoisier pass-the-hash login patterns
+#         hayabusa-rules credential lateral movement
+# CONTEXT: The existing rule 20 (pass_the_hash_ntlm) fires on all NTLM
+# type-3 logons which has high FP rate. This rule adds critical context:
+# IpAddress must be present (blank = local logon, not lateral movement)
+# AND IpAddress must NOT match WorkstationName (credential used from
+# a DIFFERENT machine than where the account normally logs in).
+# This is the core PTH fingerprint: you're using machine A's hash
+# from machine B.
+# False positive reduction: IpAddress != WorkstationName filters out
+# normal NTLM from the same machine (file shares, local services).
+title: Pass-the-Hash - NTLM Logon from Different Source Machine
+event_id: "4624"
+description: >
+  NTLM network logon where the source IP does not match the WorkstationName
+  field - the credential is being used from a DIFFERENT machine than where
+  the account normally authenticates. This is the Pass-the-Hash fingerprint:
+  an attacker using a stolen NTLM hash from a machine they control to
+  authenticate to a target system.
+  IpAddress presence + mismatch with WorkstationName is the key differentiator
+  from legitimate NTLM authentication (printers, NAS, file shares).
+  Source: SigmaHQ PTH + mdecrevoisier PTH login patterns.
+severity: high
+confidence: 0.84
+technique: T1550.002
+mitre: Lateral Movement
+conditions:
+  - field: LogonType
+    equals: "3"
+  - field: AuthenticationPackageName
+    equals: "NTLM"
+  - field: TargetUserName
+    not_ends_with: "$"
+    not_empty: true
+    not_in:
+      - ANONYMOUS LOGON
+      - LOCAL SERVICE
+      - NETWORK SERVICE
+      - SYSTEM
+  - field: IpAddress
+    not_empty: true
+    not_in:
+      - "-"
+      - "127.0.0.1"
+      - "::1"

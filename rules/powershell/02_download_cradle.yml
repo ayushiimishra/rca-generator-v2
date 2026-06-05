@@ -1,0 +1,39 @@
+# SOURCE: SigmaHQ posh_ps_susp_download_cradle.yml
+#         hayabusa-rules powershell execution patterns
+# CONTEXT: Download cradles fetch and execute code from the internet
+# in a single step. The contains_all operator ensures BOTH the download
+# mechanism AND the execution mechanism are present in the same script block.
+# IEX alone fires on many legitimate scripts (tab completion, dynamic dispatch).
+# IEX + DownloadString together = confirmed download-and-execute cradle.
+# FALSE POSITIVE: Some legitimate admin scripts do use WebClient + IEX
+# for internal tool deployment. The confidence is set at 0.85 to reflect this.
+title: PowerShell Download Cradle - IEX with WebClient
+event_id: "4104"
+description: >
+  PowerShell Script Block contains a download cradle combining remote download
+  (Net.WebClient, WebRequest, BitsTransfer) with immediate execution (IEX,
+  Invoke-Expression). This is the canonical "download and execute" pattern
+  used in initial payload delivery, second-stage loaders, and C2 beaconing.
+  The contains_all logic requires both download AND execution in same block.
+  Requires Script Block Logging (EID 4104).
+severity: high
+confidence: 0.87
+technique: T1059.001
+mitre: Execution
+conditions:
+  - field: ScriptBlockText
+    contains_any:
+      - "Invoke-Expression"
+      - "IEX "
+      - "IEX("
+      - ".Invoke("
+  - field: ScriptBlockText
+    contains_any:
+      - "DownloadString"
+      - "DownloadFile"
+      - "DownloadData"
+      - "Net.WebClient"
+      - "WebRequest"
+      - "Start-BitsTransfer"
+      - "Invoke-RestMethod"
+      - "Invoke-WebRequest"

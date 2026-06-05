@@ -1,0 +1,31 @@
+# SOURCE: SigmaHQ posh_ps_remove_powershell_history.yml
+#         mdecrevoisier windows-os PS history clearing patterns
+# CONTEXT: PowerShell history is stored in ConsoleHost_history.txt
+# and provides a forensic record of all commands run. Attackers clear
+# it to remove evidence of their actions. This is defense evasion
+# specifically targeting forensic investigation capability.
+# The PSReadLine history file location is user-specific.
+# Clear-History cmdlet clears the in-session history.
+# FALSE POSITIVE: Very low. Clearing PS history in enterprise environments
+# is unusual. Security-conscious admins might do this on their own machines.
+title: PowerShell History Cleared - Forensic Evidence Removal
+event_id: "4104"
+description: >
+  PowerShell commands to clear command history were executed, indicating
+  forensic evidence removal. Attackers clear the PSReadLine history file
+  and in-memory history to prevent investigators from seeing what commands
+  were run. This occurs after completing malicious operations.
+  Source: SigmaHQ PS history removal + mdecrevoisier defense evasion.
+severity: high
+confidence: 0.85
+technique: T1070.003
+mitre: Defense Evasion
+conditions:
+  - field: ScriptBlockText
+    contains_any:
+      - "ConsoleHost_history"
+      - "Clear-History"
+      - "Remove-Item.*History"
+      - "Get-PSReadlineOption"
+      - "Set-PSReadlineOption.*HistorySaveStyle"
+      - "PSReadLine.*HistorySavePath"

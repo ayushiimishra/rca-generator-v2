@@ -1,0 +1,32 @@
+# SOURCE: SigmaHQ posh_ps_encoded_cmd.yml
+#         hayabusa-rules PowerShell encoded execution
+# CONTEXT: -EncodedCommand is used legitimately for handling special chars
+# in scheduled tasks and remote execution. Legitimate encoded commands
+# are SHORT (under 200 chars of base64). Attack payloads are LONG full
+# scripts encoded in base64 (typically 500+ chars).
+# The min_length:400 filter eliminates the majority of legitimate admin
+# scripts while catching almost all attack payloads.
+# FALSE POSITIVE: Rare. Very long encoded commands in legitimate admin
+# scripts do exist but are unusual enough to investigate.
+title: PowerShell Large Encoded Command Execution (Possible Payload)
+event_id: "4104"
+description: >
+  PowerShell Script Block shows execution with -EncodedCommand/-enc flag
+  combined with a script block longer than 400 characters.
+  Legitimate encoded commands are short (special char handling for tasks).
+  Long encoded payloads (500+ chars base64) are the attack pattern for
+  fully encoded malware delivery. The min_length filter separates noise
+  from actual payload delivery. Requires Script Block Logging (EID 4104).
+severity: high
+confidence: 0.83
+technique: T1027.010
+mitre: Defense Evasion
+conditions:
+  - field: ScriptBlockText
+    contains_any:
+      - "-EncodedCommand"
+      - "-encodedcommand"
+      - "-enc "
+      - "-EC "
+  - field: ScriptBlockText
+    min_length: 400

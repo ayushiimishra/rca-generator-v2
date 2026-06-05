@@ -1,0 +1,42 @@
+# SOURCE: SigmaHQ proc_creation_win_regsvr32_susp_child_process.yml
+#         mdecrevoisier windows-os/win-os-regsvr32 patterns
+# CONTEXT: regsvr32.exe spawning calc/powershell/cmd/notepad/net means
+# the attacker used regsvr32 as a proxy to execute code (Squiblydoo T1218.010).
+# Regsvr32 only legitimately spawns regsvr32 itself or DLL-related processes.
+# FALSE POSITIVE: werfault.exe -u -p (Windows Error Reporting) is the ONLY
+# known legitimate child. Already excluded.
+title: Regsvr32 Spawning Suspicious Child Process
+event_id: "1"
+event_ids: ["1", "4688"]
+description: >
+  regsvr32.exe spawned a suspicious child process indicating Squiblydoo
+  technique (T1218.010) or COM hijacking. Attackers use regsvr32 /s /u /i:URL
+  to bypass application whitelisting and execute arbitrary code.
+  Only werfault.exe with -u -p args is a known legitimate child.
+severity: high
+confidence: 0.92
+technique: T1218.010
+mitre: Defense Evasion
+conditions:
+  - field: ParentImage
+    ends_with_any:
+      - "\\regsvr32.exe"
+  - field: Image
+    ends_with_any:
+      - "\\calc.exe"
+      - "\\cmd.exe"
+      - "\\cscript.exe"
+      - "\\explorer.exe"
+      - "\\mshta.exe"
+      - "\\net.exe"
+      - "\\net1.exe"
+      - "\\nltest.exe"
+      - "\\notepad.exe"
+      - "\\powershell.exe"
+      - "\\pwsh.exe"
+      - "\\reg.exe"
+      - "\\schtasks.exe"
+      - "\\wscript.exe"
+  - field: CommandLine
+    not_contains_any:
+      - "-u -p "

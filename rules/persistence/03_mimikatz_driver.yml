@@ -1,0 +1,32 @@
+# SOURCE: mdecrevoisier windows-services Mimikatz service driver detection
+#         SigmaHQ win_security_mimikatz_service_install.yml
+# CONTEXT: Mimikatz's kernel mode operation installs a known driver service.
+# The service name "mimidrv" and the driver filename "mimidrv.sys" are
+# the canonical Mimikatz kernel driver indicators.
+# Also covers the "Msvs11" variant and common renaming patterns.
+# Running Mimikatz at kernel level bypasses user-mode protection.
+# FALSE POSITIVE: None for these specific service names. If renamed,
+# the ServiceFileName path in temp/appdata would trigger rule 15 instead.
+title: Mimikatz Kernel Driver Service Installation
+event_id: "7045"
+description: >
+  A Windows service was installed with a name or binary path matching
+  Mimikatz kernel driver indicators. The mimidrv.sys driver allows Mimikatz
+  to operate in kernel mode, bypassing user-mode EDR hooks and protections.
+  Service name 'mimidrv' or driver filename 'mimidrv.sys' are definitive
+  indicators of Mimikatz kernel mode operation.
+  Source: mdecrevoisier Mimikatz service driver installation rule.
+severity: critical
+confidence: 0.98
+technique: T1543.003
+mitre: Privilege Escalation
+conditions:
+  - field: ServiceName
+    contains_any:
+      - "mimidrv"
+      - "mimikatzsvc"
+      - "Win32 System"
+  - field: ServiceFileName
+    contains_any:
+      - "mimidrv"
+      - "mimikatz"

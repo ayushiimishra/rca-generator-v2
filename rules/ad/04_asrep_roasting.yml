@@ -1,0 +1,36 @@
+# SOURCE: mdecrevoisier windows-active_directory AS-REP Roasting rule
+#         SigmaHQ win_security_asrep_roasting.yml
+# CONTEXT: AS-REP Roasting requests TGTs for accounts with pre-authentication
+# disabled. The TGT is encrypted with the account's hash - attackable offline.
+# EID 4768 with ResultCode 0x0 (success) AND PreAuthType 0 (no pre-auth)
+# for a non-machine account is the exact fingerprint.
+# Modern AD environments should have pre-auth required for all accounts.
+# PreAuthType 0 + non-krbtgt user = account misconfiguration or attacker setup.
+# FALSE POSITIVE: Legacy applications that require no-preauthentication.
+# Those accounts should be known/documented in your environment.
+title: AS-REP Roasting - Kerberos TGT Request Without Pre-Authentication
+event_id: "4768"
+description: >
+  A Kerberos TGT was issued for an account with pre-authentication disabled
+  (PreAuthType=0). This is the AS-REP Roasting attack where the attacker
+  requests TGTs for accounts to crack offline. Unlike Kerberoasting (EID 4769),
+  AS-REP Roasting doesn't require valid credentials first.
+  Requires 'Audit Kerberos Authentication Service' policy enabled.
+  Source: mdecrevoisier AS-REP Roasting detection rule.
+severity: high
+confidence: 0.85
+technique: T1558.004
+mitre: Credential Access
+conditions:
+  - field: PreAuthType
+    equals: "0"
+  - field: TargetUserName
+    not_ends_with: "$"
+    not_empty: true
+    not_in:
+      - krbtgt
+      - ANONYMOUS LOGON
+  - field: Status
+    equals_any:
+      - "0x0"
+      - "0x00"

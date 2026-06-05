@@ -70,8 +70,7 @@ async def root():
 @app.post("/api/analyze")
 async def analyze(
     background_tasks: BackgroundTasks,
-    evtx_files: list[UploadFile] = File(None),
-    waf_files:  list[UploadFile] = File(None)
+    log_files: list[UploadFile] = File(None)
 ):
     session_id = str(uuid.uuid4())[:8]
     SESSIONS[session_id] = {
@@ -85,101 +84,61 @@ async def analyze(
 
     evtx_paths = []
     waf_paths  = []
+    dns_paths  = []
 
-    if evtx_files:
-        for i, f in enumerate(evtx_files):
+    if log_files:
+        for i, f in enumerate(log_files):
             if not f or not f.filename:
                 continue
             content = await f.read()
             if not content:
                 continue
-            path = str(
-                UPLOAD_DIR /
-                f"{session_id}_evtx_{i}.evtx"
-            )
+
+            # Save with a generic extension first for detection
+            ext = Path(f.filename).suffix.lower() or ".log"
+            path = str(UPLOAD_DIR / f"{session_id}_upload_{i}{ext}")
             with open(path, "wb") as out:
                 out.write(content)
+
             file_size_mb = len(content) / (1024 * 1024)
             if file_size_mb > 500:
                 os.remove(path)
                 return JSONResponse(
-                    {"error":
-                     f"{f.filename} is too large "
-                     f"({file_size_mb:.0f}MB). "
-                     f"Maximum file size is 500MB."},
+                    {"error": f"{f.filename} is too large "
+                              f"({file_size_mb:.0f}MB). Max 500MB."},
                     status_code=400
                 )
-            from pipeline.file_detector import (
-                detect_file_type
-            )
+
+            from pipeline.file_detector import detect_file_type
             result = detect_file_type(path)
-            if not result["valid"] or \
-               result["type"] not in [
-                   "evtx", "evtx_csv"
-               ]:
-                os.remove(path)
-                return JSONResponse(
-                    {"error":
-                     f"{f.filename} is not a valid "
-                     f"Windows Event Log file."},
-                    status_code=400
-                )
-            evtx_paths.append(path)
 
-    if waf_files:
-        for i, f in enumerate(waf_files):
-            if not f or not f.filename:
-                continue
-            content = await f.read()
-            if not content:
-                continue
-            path = str(
-                UPLOAD_DIR /
-                f"{session_id}_waf_{i}.log"
-            )
-            with open(path, "wb") as out:
-                out.write(content)
-            file_size_mb = len(content) / (1024 * 1024)
-            if file_size_mb > 500:
+            if not result["valid"]:
                 os.remove(path)
                 return JSONResponse(
-                    {"error":
-                     f"{f.filename} is too large "
-                     f"({file_size_mb:.0f}MB). "
-                     f"Maximum file size is 500MB."},
+                    {"error": f"{f.filename}: "
+                              f"{result.get('message') or result.get('reason', 'Unsupported file format')}"},
                     status_code=400
                 )
-            import re as _re
-            NGINX_RE = _re.compile(
-                r'\S+ \S+ \S+ \[[^\]]+\] '
-                r'"[A-Z]+ .+ HTTP/\S+" \d+ \S+'
-            )
-            valid_lines = 0
-            try:
-                with open(path, 'r',
-                          errors='replace') as rf:
-                    for j, line in enumerate(rf):
-                        if j > 20:
-                            break
-                        if NGINX_RE.match(
-                            line.strip()
-                        ):
-                            valid_lines += 1
-            except Exception:
-                pass
-            if valid_lines == 0:
-                os.remove(path)
-                return JSONResponse(
-                    {"error":
-                     f"{f.filename} is not a valid "
-                     f"web access log file."},
-                    status_code=400
-                )
-            waf_paths.append(path)
 
-    if not evtx_paths and not waf_paths:
+            file_type = result["type"]
+            if file_type in ("evtx", "evtx_csv"):
+                evtx_paths.append(path)
+            elif file_type in ("waf", "waf_csv"):
+                waf_paths.append(path)
+            elif file_type == "dns":
+                dns_paths.append(path)
+            else:
+                os.remove(path)
+                return JSONResponse(
+                    {"error": f"{f.filename}: unrecognised log type '{file_type}'. "
+                              "Supported: .evtx, Nginx/Apache .log, DNS .log, CSV"},
+                    status_code=400
+                )
+
+    if not evtx_paths and not waf_paths and not dns_paths:
         return JSONResponse(
-            {"error": "No valid files uploaded"},
+            {"error": "No valid files uploaded. "
+                      "Supported: .evtx, Nginx/Apache .log, DNS .log, CSV"},
             status_code=400
         )
 
@@ -187,7 +146,8 @@ async def analyze(
         run_pipeline,
         session_id,
         evtx_paths,
-        waf_paths
+        waf_paths,
+        dns_paths
     )
 
     return {"session_id": session_id}
@@ -215,7 +175,8 @@ RULE_TO_EID_MAP = {
 async def run_pipeline(
     session_id:  str,
     evtx_paths:  list,
-    waf_paths:   list
+    waf_paths:   list,
+    dns_paths:   list = None
 ):
     def update(progress, message):
         SESSIONS[session_id]["progress"] = progress
@@ -233,6 +194,7 @@ async def run_pipeline(
         from pipeline.scenario_engine import (
             evaluate_stream_scenarios
         )
+        from pipeline.correlation_engine import run_correlation
         from pipeline.triage_agent import run_triage
         from pipeline.phi4_rca import generate_rca
 
@@ -252,7 +214,11 @@ async def run_pipeline(
             return ts if ts != "unknown" \
                 else "9999-12-31T23:59:59Z"
 
-        all_streams = evtx_streams + waf_streams
+        dns_paths = dns_paths or []
+        from pipeline.dns_parser import parse_dns
+        dns_streams = [parse_dns(p) for p in dns_paths]
+
+        all_streams = evtx_streams + waf_streams + dns_streams
         if len(all_streams) == 1:
             merged_events = all_streams[0]
         else:
@@ -287,48 +253,53 @@ async def run_pipeline(
 
         update(30, "Running Chainsaw Sigma rules...")
         sigma_hits = []
-        for ep in evtx_paths:
-            hits = run_chainsaw(
-                ep,
-                "./chainsaw/chainsaw",
-                "./sigma-rules/rules/windows/"
-            )
-            sigma_hits.extend(hits)
-        if not sigma_hits and evtx_paths:
-            sigma_hits = simulate_chainsaw(
-                evtx_paths[0], templates
-            )
+        try:
+            for ep in evtx_paths:
+                hits = run_chainsaw(
+                    ep,
+                    "./chainsaw/chainsaw",
+                    "./sigma-rules/rules/windows/"
+                )
+                sigma_hits.extend(hits)
+            if not sigma_hits and evtx_paths:
+                sigma_hits = simulate_chainsaw(
+                    evtx_paths[0], templates
+                )
+        except Exception as _ce:
+            print(f"[{session_id}] Chainsaw skipped: {_ce}")
+            sigma_hits = []
 
         update(50, "Running custom detection rules...")
         lite_hits = []
+        lite_path = str(UPLOAD_DIR / f"{session_id}_sigma_lite.json")
+
+        # Build merged event stream: evtx + waf + dns
+        all_rule_streams = []
         if evtx_paths:
-            from pipeline.evtx_parser import parse_evtx
-            import heapq as _hq
-            evtx_streams2 = [
-                parse_evtx(p) for p in evtx_paths
-            ]
-            if len(evtx_streams2) == 1:
-                events2 = evtx_streams2[0]
+            all_rule_streams += [parse_evtx(p) for p in evtx_paths]
+        if waf_paths:
+            from pipeline.waf_parser import parse_waf as _pw
+            all_rule_streams += [_pw(p) for p in waf_paths]
+        if dns_paths:
+            from pipeline.dns_parser import parse_dns as _pd
+            all_rule_streams += [_pd(p) for p in dns_paths]
+
+        if all_rule_streams:
+            import heapq as _hq2
+            if len(all_rule_streams) == 1:
+                all_rule_events = all_rule_streams[0]
             else:
-                events2 = _hq.merge(
-                    *evtx_streams2, key=_ts_key
+                all_rule_events = _hq2.merge(
+                    *all_rule_streams, key=_ts_key
                 )
-            lite_path = str(
-                UPLOAD_DIR /
-                f"{session_id}_sigma_lite.json"
-            )
             lite_hits = run_sigma_lite(
-                events2, output_path=lite_path
+                all_rule_events, output_path=lite_path
             )
 
-        update(60, "Running behavioral scenarios...")
-        scenario_path = str(
-            UPLOAD_DIR / f"{session_id}_scenario_hits.json"
-        )
-        scenario_hits = evaluate_stream_scenarios(
-            templates_path=templates_path,
-            output_path=scenario_path
-        )
+        # Ensure lite_path file always exists for downstream consumers
+        if not os.path.exists(lite_path):
+            with open(lite_path, "w") as f:
+                json.dump([], f)
 
         all_hits = sigma_hits + lite_hits
         sigma_path = str(
@@ -337,15 +308,76 @@ async def run_pipeline(
         with open(sigma_path, "w") as f:
             json.dump(all_hits, f)
 
+        update(60, "Running behavioral scenarios...")
+        scenario_path = str(
+            UPLOAD_DIR / f"{session_id}_scenario_hits.json"
+        )
+        try:
+            scenario_hits = evaluate_stream_scenarios(
+                sigma_hits_path=lite_path if lite_hits else sigma_path,
+                waf_hits_path=sigma_path,
+                output_path=scenario_path,
+            )
+        except Exception as _se:
+            print(f"[{session_id}] Scenario engine failed: {_se}")
+            scenario_hits = []
+
+        # Ensure scenario_path file always exists for run_correlation
+        if not os.path.exists(scenario_path):
+            with open(scenario_path, "w") as f:
+                json.dump([], f)
+
+        update(65, "Correlating cross-source evidence...")
+        corr_path     = str(UPLOAD_DIR / f"{session_id}_correlation.json")
+        timeline_path = str(UPLOAD_DIR / f"{session_id}_timeline.json")
+
+        # Re-parse log files to pass raw event stream for richer IP correlation
+        from pipeline.evtx_parser import parse_evtx as _parse_evtx
+        from pipeline.waf_parser  import parse_waf  as _parse_waf
+        _raw_events = []
+        try:
+            for _ep in evtx_paths:
+                _raw_events.extend(list(_parse_evtx(_ep)))
+            for _wp in waf_paths:
+                _raw_events.extend(list(_parse_waf(_wp)))
+            from pipeline.dns_parser import parse_dns as _pdns
+            for _dp in (dns_paths or []):
+                _raw_events.extend(list(_pdns(_dp)))
+        except Exception as _e:
+            print(f"[{session_id}] Raw event reparse skipped: {_e}")
+
+        try:
+            run_correlation(
+                sigma_lite_path=lite_path if lite_hits else sigma_path,
+                sigma_path=sigma_path,
+                waf_hits_path=sigma_path,
+                scenario_path=scenario_path,
+                corr_output=corr_path,
+                timeline_output=timeline_path,
+                raw_events=_raw_events or None,
+            )
+        except Exception as _cre:
+            print(f"[{session_id}] Correlation failed: {_cre}")
+
         update(70, "Running triage agent...")
         triage_path = str(
             UPLOAD_DIR / f"{session_id}_triage.txt"
         )
-        run_triage(
-            templates_path=templates_path,
-            sigma_path=sigma_path,
-            output_path=triage_path
-        )
+        try:
+            run_triage(
+                templates_path=templates_path,
+                sigma_path=sigma_path,
+                output_path=triage_path,
+                corr_path=corr_path,
+                timeline_path=timeline_path,
+            )
+        except Exception as _te:
+            print(f"[{session_id}] Triage failed: {_te}")
+
+        # Ensure triage_path file always exists for generate_rca
+        if not os.path.exists(triage_path):
+            with open(triage_path, "w") as f:
+                f.write("Triage unavailable.")
 
         update(85, "Generating RCA with AI...")
         rca_path = str(

@@ -1,0 +1,31 @@
+# SOURCE: mdecrevoisier windows-active_directory "Admin share accessed via SMB"
+#         SigmaHQ win_security_smb_access.yml
+# CONTEXT: Admin shares (C$, ADMIN$, IPC$) are used for lateral movement.
+# PSExec, Impacket SMBexec, CrackMapExec all access admin shares.
+# mdecrevoisier documents EID 5140/5145 as the SMB admin share access
+# indicators. EID 5140 = network share accessed; 5145 = network share
+# object accessed (file level).
+# NULL session (anonymous) SMB connections are especially suspicious.
+# FALSE POSITIVE: Legitimate admin tools, backup software use admin shares.
+# Should correlate with unusual source IPs or after-hours timing.
+title: SMB Admin Share Access (C$, ADMIN$, IPC$)
+event_id: "5140"
+event_ids: ["5140", "5145"]
+description: >
+  A Windows admin share (C$, ADMIN$, IPC$) was accessed via SMB. Admin
+  shares are the primary lateral movement path for PSExec, Impacket SMBexec,
+  CrackMapExec, and other offensive tools. Anonymous SMB connections to
+  admin shares are especially indicative of tool-based lateral movement.
+  Source: mdecrevoisier admin share SMB access + SigmaHQ SMB access rules.
+severity: medium
+confidence: 0.72
+technique: T1021.002
+mitre: Lateral Movement
+conditions:
+  - field: ShareName
+    contains_any:
+      - "\\\\*\\C$"
+      - "\\\\*\\ADMIN$"
+      - "\\\\*\\IPC$"
+      - "C$"
+      - "ADMIN$"

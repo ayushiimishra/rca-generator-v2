@@ -1,0 +1,31 @@
+# SOURCE: mdecrevoisier windows-active_directory Impacket WMIexec detection
+#         SigmaHQ win_security_impacket_psexec.yml
+# CONTEXT: Impacket's WMIexec, SMBexec, and PSExec install a temporary
+# Windows service with a random or distinctive service name. The service
+# binary path is cmd /Q /c (SMBexec pattern) or a random name (PSExec: PSEXESVC).
+# mdecrevoisier specifically identifies the "Service massive installation"
+# pattern (multiple 7045 events in rapid succession = Impacket tool sweep).
+# Random 8-char uppercase service names are the PSExec default.
+# FALSE POSITIVE: PSExec used legitimately for admin creates PSEXESVC.
+# The cmd /Q /c pattern is exclusive to Impacket SMBexec.
+title: Impacket/PSExec Remote Service Installation (Lateral Movement)
+event_id: "7045"
+description: >
+  A Windows service was installed with command patterns matching Impacket's
+  SMBexec (cmd /Q /c) or PSExec (PSEXESVC service name) tools used for
+  lateral movement. The service is a temporary execution vehicle - created,
+  used, then deleted. Multiple rapid 7045 events indicate tool sweep.
+  Also catches random-named services from custom PSExec-style tools.
+  Source: mdecrevoisier Impacket service patterns + SigmaHQ PSExec rules.
+severity: high
+confidence: 0.87
+technique: T1021.002
+mitre: Lateral Movement
+conditions:
+  - field: ServiceFileName
+    contains_any:
+      - "cmd /Q /c"
+      - "cmd.exe /Q /c"
+      - "%COMSPEC% /Q /c"
+      - "\\windows\\temp\\"
+      - "\\windows\\tasks\\"

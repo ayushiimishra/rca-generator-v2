@@ -1,0 +1,35 @@
+# SOURCE: SigmaHQ posh_ps_amsi_bypass_pattern_nov22.yml
+#         posh_ps_amsi_null_bits_bypass.yml
+# CONTEXT: AMSI (Antimalware Scan Interface) inspects PowerShell scripts
+# before execution. Attackers patch AMSI to blind AV detection.
+# These strings appear ONLY in AMSI bypass code - they reference internal
+# .NET AMSI classes and memory manipulation functions.
+# Matt Graeber's one-liner and its variants are the most common.
+# FALSE POSITIVE: None. These strings are diagnostic of offensive code.
+# Security researchers testing AMSI bypasses would trigger this - acceptable.
+title: PowerShell AMSI Bypass Attempt
+event_id: "4104"
+description: >
+  PowerShell Script Block contains known AMSI bypass strings that patch
+  the Antimalware Scan Interface to disable AV script inspection.
+  Techniques include reflection-based patching (AmsiUtils.amsiInitFailed),
+  memory manipulation (AmsiScanBuffer), and DLL unloading (amsi.dll).
+  These strings have zero legitimate use in production scripts.
+  Requires Script Block Logging (EID 4104).
+severity: critical
+confidence: 0.97
+technique: T1562.001
+mitre: Defense Evasion
+conditions:
+  - field: ScriptBlockText
+    contains_any:
+      - "AmsiUtils"
+      - "amsiInitFailed"
+      - "AmsiScanBuffer"
+      - "amsi.dll"
+      - "AmsiOpenSession"
+      - "AmsiScanString"
+      - "[Runtime.InteropServices.Marshal]::Copy"
+      - "[Ref].Assembly.GetType('System.Management.Automation.AmsiUtils')"
+      - "amsi.dll\",0"
+      - "Invoke-AmsiBypass"

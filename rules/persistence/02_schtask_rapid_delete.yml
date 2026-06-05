@@ -1,0 +1,31 @@
+# SOURCE: mdecrevoisier windows-scheduled_task "Schedule task fastly created and deleted"
+#         SigmaHQ win_security_susp_schtask_delete.yml
+# CONTEXT: Atexec (Impacket tool) and similar lateral movement tools create
+# a scheduled task to execute a command, then immediately delete it to remove
+# the artifact. The task lifetime is measured in seconds.
+# This pattern: 4698 (task created) → command executes → 4699 (task deleted)
+# within a tight window is the Atexec signature.
+# mdecrevoisier specifically documents this as the Atexec fingerprint.
+# FALSE POSITIVE: Automated deployment scripts that create and clean up tasks.
+# Should be rare enough to investigate all hits.
+title: Scheduled Task Created and Immediately Deleted (Atexec/Lateral Movement)
+event_id: "4699"
+description: >
+  A scheduled task was deleted very shortly after creation, indicating
+  use of Atexec (Impacket tool) or similar lateral movement techniques
+  that create tasks for temporary remote command execution then clean up.
+  The task lifecycle (create → execute → delete in seconds) is distinct
+  from legitimate task management.
+  Source: mdecrevoisier "Schedule task fastly created and deleted" Atexec rule.
+severity: high
+confidence: 0.85
+technique: T1053.005
+mitre: Lateral Movement
+conditions:
+  - field: SubjectUserName
+    not_ends_with: "$"
+    not_empty: true
+    not_in:
+      - SYSTEM
+      - LOCAL SERVICE
+      - NETWORK SERVICE

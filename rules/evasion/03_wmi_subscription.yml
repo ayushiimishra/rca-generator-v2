@@ -1,0 +1,36 @@
+# SOURCE: mdecrevoisier windows-os WMI registration
+#         SigmaHQ sysmon_wmi_susp_filter_to_consumer_binding.yml
+# CONTEXT: WMI event subscriptions are fileless persistence mechanisms.
+# An attacker creates: EventFilter (trigger condition) + EventConsumer
+# (action) + FilterToConsumerBinding (links them). This executes arbitrary
+# code on trigger events (startup, login, time, etc.) with no disk artifacts.
+# Sysmon EID 19 = WmiEvent (EventFilter activity detected)
+# Sysmon EID 20 = WmiEvent (EventConsumer activity detected)
+# Sysmon EID 21 = WmiEvent (EventFilter to Consumer binding)
+# Any non-system WMI subscription creation is suspicious.
+# FALSE POSITIVE: Some AV/EDR products use WMI subscriptions legitimately.
+# Known security product names should be added to not_contains_any.
+title: WMI Event Subscription Created - Fileless Persistence
+event_id: "19"
+event_ids: ["19", "20", "21"]
+description: >
+  A WMI Event Subscription was created (EID 19 filter, EID 20 consumer,
+  EID 21 binding). WMI subscriptions execute arbitrary code triggered by
+  system events (startup, login, timer) with no disk artifacts, making
+  them invisible to most AV tools. Used by APT groups (APT29, FIN7) and
+  ransomware for persistent backdoor access.
+  Requires Sysmon WMI event logging (EID 19/20/21).
+  Source: mdecrevoisier WMI registration + SigmaHQ WMI persistence rules.
+severity: high
+confidence: 0.86
+technique: T1546.003
+mitre: Persistence
+conditions:
+  - field: Operation
+    not_in:
+      - ""
+  - field: Consumer
+    not_contains_any:
+      - "SCM Event Log Consumer"
+      - "Windows Error Reporting"
+      - "TSLogonEvents.mof"

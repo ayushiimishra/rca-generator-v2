@@ -1,0 +1,43 @@
+# SOURCE: SigmaHQ web_path_traversal_exploitation.yml
+#         Advanced guide to Sigma rules for web server analysis patterns
+# CONTEXT: Path traversal that targets SPECIFIC system files has very high
+# confidence because legitimate applications never request /etc/passwd,
+# /windows/system32 paths, or config files like web.config.
+# The key insight: "../" alone is low confidence (some CMS use it legitimately).
+# "../" + system file target = confirmed exploitation attempt.
+# FALSE POSITIVE: Internal security scanners. Some WAF testing scenarios.
+# The system file target list filters most FPs.
+title: Path Traversal Targeting System Files (Confirmed Exploitation)
+event_id: "waf_request"
+description: >
+  HTTP request contained path traversal sequences targeting specific
+  system files (passwd, system32, web.config, etc.). Path traversal alone
+  has FP risk - this rule requires the traversal + specific system file target
+  combination which eliminates legitimate CMS navigation patterns.
+  Source: SigmaHQ web path traversal + system file target context.
+severity: critical
+confidence: 0.91
+technique: T1083
+mitre: Discovery
+conditions:
+  - field: uri
+    contains_any:
+      - "../"
+      - "..%2f"
+      - "..%5c"
+      - "%2e%2e%2f"
+      - "..\\"
+  - field: uri
+    contains_any:
+      - "etc/passwd"
+      - "etc/shadow"
+      - "windows/system32"
+      - "windows/win.ini"
+      - "boot.ini"
+      - "web.config"
+      - "wp-config.php"
+      - ".env"
+      - "/proc/self/"
+      - "global.asa"
+      - ".htaccess"
+      - "php.ini"

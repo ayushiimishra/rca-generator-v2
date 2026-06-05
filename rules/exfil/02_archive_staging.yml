@@ -1,0 +1,43 @@
+# SOURCE: SigmaHQ proc_creation_win_susp_archive_creation.yml
+#         DFIR Report Ransomware 2025 - data staging before exfil
+# CONTEXT: Ransomware and APT groups archive data before exfiltration.
+# The staging pattern: create password-protected archive in Temp/AppData/
+# Public, then upload with rclone/MEGAsync/FileZilla.
+# Legitimate archiving occurs in known paths (Backup folders, Desktop).
+# Archiving in Temp/AppData from an interactive session is staging.
+# The -p flag (password) is especially suspicious - hides contents from DLP.
+# FALSE POSITIVE: Some legitimate backup scripts use 7z from temp paths.
+# Should correlate with network upload activity within short time window.
+title: Suspicious Data Archiving in Writable Path (Pre-Exfil Staging)
+event_id: "4688"
+event_ids: ["4688", "1"]
+description: >
+  7zip or WinRAR was used to create an archive in a user-writable directory
+  (Temp, AppData, Public, Downloads). This is the data staging step before
+  exfiltration - ransomware affiliates archive sensitive files before
+  uploading via cloud sync tools. Password-protected archives (-p flag)
+  are especially suspicious as they hide content from DLP tools.
+  Source: SigmaHQ archive creation + DFIR Report ransomware staging TTPs.
+severity: high
+confidence: 0.83
+technique: T1560.001
+mitre: Collection
+conditions:
+  - field: Image
+    ends_with_any:
+      - "\\7z.exe"
+      - "\\7za.exe"
+      - "\\7zr.exe"
+      - "\\WinRAR.exe"
+      - "\\rar.exe"
+      - "\\winzip.exe"
+  - field: CommandLine
+    contains_any:
+      - " a "
+      - " a\""
+      - "\\AppData\\"
+      - "\\Temp\\"
+      - "\\Users\\Public\\"
+      - "\\Downloads\\"
+      - "C:\\ProgramData\\"
+      - "C:\\Windows\\Temp\\"

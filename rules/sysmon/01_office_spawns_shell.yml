@@ -1,0 +1,43 @@
+# SOURCE: SigmaHQ proc_creation_win_office_spawn_child_process.yml
+#         hayabusa-rules SUSPICIOUS_CHAINS pattern
+# CONTEXT FOR THIS PROJECT: evtx_parser.py populates ParentProcessName
+# (EID 4688) and Image/ParentImage (Sysmon EID 1). Both field names checked.
+# FALSE POSITIVE ANALYSIS: None in modern Office with Protected View.
+# Legacy macro automation environments may trigger - but those should be
+# replaced. If your org uses VBA macros legitimately, tune by adding
+# not_contains_any on Image for your specific automation binaries.
+title: Office Application Spawning Shell Process
+event_id: "1"
+event_ids: ["1", "4688"]
+description: >
+  Office app (Word/Excel/Outlook/PowerPoint) directly spawned a shell
+  or scripting interpreter. This is the canonical indicator of macro-based
+  malware delivery via spear-phishing attachments. There is no legitimate
+  modern Office workflow that spawns cmd.exe or powershell.exe directly.
+  Covers Sysmon EID 1 (ParentImage field) and Security EID 4688 (ParentProcessName).
+severity: critical
+confidence: 0.97
+technique: T1566.001
+mitre: Execution
+conditions:
+  - field: ParentImage
+    contains_any:
+      - "\\winword.exe"
+      - "\\excel.exe"
+      - "\\outlook.exe"
+      - "\\powerpnt.exe"
+      - "\\onenote.exe"
+      - "\\mspub.exe"
+      - "\\visio.exe"
+  - field: Image
+    ends_with_any:
+      - "\\cmd.exe"
+      - "\\powershell.exe"
+      - "\\pwsh.exe"
+      - "\\wscript.exe"
+      - "\\cscript.exe"
+      - "\\mshta.exe"
+      - "\\regsvr32.exe"
+      - "\\rundll32.exe"
+      - "\\certutil.exe"
+      - "\\bitsadmin.exe"

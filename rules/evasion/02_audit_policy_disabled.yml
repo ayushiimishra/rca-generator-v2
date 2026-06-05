@@ -1,0 +1,25 @@
+# SOURCE: mdecrevoisier windows-os audit policy disabled
+#         SigmaHQ win_security_audit_policy_disabled.yml
+# CONTEXT: EID 4719 fires when an audit policy is disabled or changed.
+# Attackers disable audit policies to stop new events from being generated
+# BEFORE performing their actions. This is different from clearing existing
+# logs (EID 1102/wevtutil) - this prevents future logging.
+# "Audit Policy Change" category = 4719.
+# Any disabling of Success or Failure auditing mid-operation is suspicious.
+# FALSE POSITIVE: Group Policy application can generate 4719 when policies
+# are applied. Filter for changes that REDUCE auditing (Success/Failure
+# changed from enabled to disabled).
+title: Audit Policy Disabled - Blind Spot Creation Before Attack
+event_id: "4719"
+description: >
+  Windows audit policy was modified to disable logging. Attackers disable
+  audit policies before performing actions to prevent those actions from
+  generating Event Log entries. This creates a forensic blind spot.
+  EID 4719 fires on any audit policy change - any disabling of Success
+  or Failure auditing outside of Group Policy application is critical.
+  Source: mdecrevoisier audit policy disabled + SigmaHQ audit policy rules.
+severity: high
+confidence: 0.82
+technique: T1562.002
+mitre: Defense Evasion
+conditions: []

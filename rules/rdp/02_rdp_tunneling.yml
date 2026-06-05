@@ -1,0 +1,32 @@
+# SOURCE: mdecrevoisier windows-rdp "RDP tunneling detected via ngrok"
+#         SigmaHQ proc_creation_win_ngrok_use.yml
+# CONTEXT: Attackers use ngrok, frp, and similar tunneling tools to expose
+# internal RDP to the internet through a tunnel that bypasses firewalls.
+# mdecrevoisier specifically documents the ngrok pattern for RDP tunneling.
+# ngrok.exe, frpc.exe, chisel.exe are common tunneling tools.
+# The presence of these tools on any corporate endpoint is highly suspicious.
+# FALSE POSITIVE: Developers sometimes use ngrok for development webhooks.
+# Should be whitelisted for specific users in development environments only.
+title: RDP/Service Tunneling Tool Execution (ngrok/frp/chisel)
+event_id: "4688"
+event_ids: ["4688", "1"]
+description: >
+  A network tunneling tool was executed to expose internal services through
+  an external tunnel, bypassing firewall restrictions. ngrok, frp, and
+  chisel are used by attackers to create persistent external RDP access.
+  The --authtoken or -remote-addr flags confirm C2 tunnel configuration.
+  Source: mdecrevoisier RDP tunneling via ngrok + SigmaHQ tunneling tools.
+severity: high
+confidence: 0.88
+technique: T1572
+mitre: Command and Control
+conditions:
+  - field: Image
+    contains_any:
+      - "\\ngrok"
+      - "\\frpc."
+      - "\\frps."
+      - "\\chisel"
+      - "\\plink"
+      - "\\ligolo"
+      - "\\rathole"

@@ -1,0 +1,48 @@
+# SOURCE: mdecrevoisier windows-os registry persistence patterns
+#         SigmaHQ win_security_registry_run_key_modification.yml
+# CONTEXT: Run/RunOnce registry keys execute binaries at startup/login.
+# Attackers write their payloads' paths to these keys for persistence.
+# The key indicator: the value data (path to executable) is in a
+# user-writable location (Temp, AppData, ProgramData) NOT in Program Files
+# or Windows directories.
+# Legitimate software also uses Run keys but from trusted paths.
+# Path restriction eliminates FP from legitimate software.
+# FALSE POSITIVE: Some legitimate software writes Run keys from ProgramData.
+# The not_contains_any exclusion handles most known legitimate vendors.
+title: Registry Run Key Persistence - Writable Path
+event_id: "4657"
+event_ids: ["4657", "13"]
+description: >
+  A registry Run/RunOnce key was modified to add a binary path in a
+  user-writable directory (Temp, AppData, Downloads, ProgramData).
+  Legitimate software uses Run keys but from trusted installer paths.
+  Malware writes Run keys pointing to temp/appdata to survive reboots.
+  This is one of the most common persistence mechanisms.
+  Source: mdecrevoisier registry persistence + SigmaHQ Run key rules.
+severity: high
+confidence: 0.85
+technique: T1547.001
+mitre: Persistence
+conditions:
+  - field: ObjectName
+    contains_any:
+      - "\\CurrentVersion\\Run"
+      - "\\CurrentVersion\\RunOnce"
+      - "\\CurrentVersion\\RunServices"
+      - "\\CurrentVersion\\RunServicesOnce"
+      - "\\Winlogon\\Userinit"
+      - "\\Winlogon\\Shell"
+  - field: NewValue
+    contains_any:
+      - "\\AppData\\"
+      - "\\Temp\\"
+      - "\\Downloads\\"
+      - "\\Users\\Public\\"
+      - "C:\\ProgramData\\"
+      - "C:\\Windows\\Temp\\"
+  - field: NewValue
+    not_contains_any:
+      - "\\Program Files\\"
+      - "\\Program Files (x86)\\"
+      - "C:\\Windows\\System32\\"
+      - "C:\\Windows\\SysWOW64\\"

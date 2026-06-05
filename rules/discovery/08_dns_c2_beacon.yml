@@ -1,0 +1,26 @@
+# SOURCE: dns_parser.py built-in beacon detection (>20 queries to same base domain)
+#         SigmaHQ dns_query_c2_beacon.yml
+# CONTEXT: Your dns_parser.py tracks query counts per (client_ip, base_domain)
+# pair. When a single host queries the same base domain more than 20 times
+# in a session, it sets detections=["c2_beacon"] and beacon_count.
+# C2 beaconing is periodic communication from compromised host to C2 server.
+# DNS-based C2 checks in by querying the C2 domain repeatedly.
+# FALSE POSITIVE: Some CDN/streaming services have high DNS query counts.
+# The 20-query threshold in dns_parser.py already handles common FPs.
+title: C2 DNS Beaconing - Repeated Queries to Same Domain
+event_id: "dns_query"
+description: >
+  A single host queried the same domain more than 20 times indicating
+  C2 beaconing via DNS. C2 implants use periodic DNS queries to check
+  for instructions or maintain persistent communication with the C2 server.
+  beacon_count field shows the exact number of queries detected.
+  Detection via dns_parser.py beacon tracking.
+  Source: dns_parser.py built-in C2 beacon detection.
+severity: high
+confidence: 0.80
+technique: T1071.004
+mitre: Command and Control
+conditions:
+  - field: detections
+    contains_any:
+      - "c2_beacon"

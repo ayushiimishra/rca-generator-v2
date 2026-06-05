@@ -1,0 +1,32 @@
+# SOURCE: mdecrevoisier windows-rdp session hijack via TSCON abuse command
+#         SigmaHQ proc_creation_win_tscon_rdp_hijack.yml
+# CONTEXT: TSCON (Terminal Services Connection) can hijack existing RDP
+# sessions without knowing the user's password. An attacker with SYSTEM
+# privileges runs: tscon <session_id> /dest:console
+# This connects the attacker to an existing logged-in session silently.
+# The SERVICE keyword in CommandLine is the specific indicator of this
+# attack - legitimate tscon usage doesn't involve "service" in the args.
+# FALSE POSITIVE: None. The specific tscon + service combination is not
+# used in any legitimate administrative workflow.
+title: RDP Session Hijack via TSCON (No Password Required)
+event_id: "4688"
+event_ids: ["4688", "1"]
+description: >
+  tscon.exe was used to hijack an existing RDP session without authentication.
+  TSCON with the /dest:console or session ID arguments allows SYSTEM-privileged
+  attackers to take over any user's active desktop session silently.
+  Used for lateral movement and credential access without network login.
+  Source: mdecrevoisier windows-rdp session hijack rule.
+severity: critical
+confidence: 0.94
+technique: T1563.002
+mitre: Lateral Movement
+conditions:
+  - field: Image
+    ends_with_any:
+      - "\\tscon.exe"
+  - field: CommandLine
+    contains_any:
+      - "/dest:"
+      - "console"
+      - "rdp-tcp"

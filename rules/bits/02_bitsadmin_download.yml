@@ -1,0 +1,36 @@
+# SOURCE: mdecrevoisier windows-bits command execution suspicious BITS activity
+#         SigmaHQ proc_creation_win_bitsadmin_download.yml
+# CONTEXT: bitsadmin.exe /transfer is the command-line interface to create
+# BITS download jobs. Legitimate bitsadmin use: Windows Update, SCCM.
+# Attacker use: download payload, cleanup after execution.
+# The /transfer flag with a URL and output path in temp/appdata is the
+# classic bitsadmin payload delivery technique.
+# FALSE POSITIVE: SCCM and some enterprise patch management uses bitsadmin.
+# Those always use system paths (C:\Windows\) not user paths.
+title: Bitsadmin Download - Payload Delivery via BITS
+event_id: "4688"
+event_ids: ["4688", "1"]
+description: >
+  bitsadmin.exe was used with /transfer to download a file, potentially
+  for payload delivery. BITS downloads are used by attackers because they
+  blend with Windows Update traffic and persist through reboots.
+  The /transfer flag with URL and output path in user-writable location
+  is the attacker delivery pattern - legitimate SCCM uses system paths.
+  Source: mdecrevoisier BITS command + SigmaHQ bitsadmin download rules.
+severity: high
+confidence: 0.83
+technique: T1197
+mitre: Defense Evasion
+conditions:
+  - field: Image
+    ends_with_any:
+      - "\\bitsadmin.exe"
+  - field: CommandLine
+    contains_any:
+      - "/transfer"
+      - "/addfile"
+  - field: CommandLine
+    contains_any:
+      - "http://"
+      - "https://"
+      - "ftp://"

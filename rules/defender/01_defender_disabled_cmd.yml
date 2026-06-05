@@ -1,0 +1,43 @@
+# SOURCE: mdecrevoisier windows-defender critical security components disabled (command)
+#         SigmaHQ proc_creation_win_susp_disable_windows_defender.yml
+# CONTEXT: Ransomware pre-deployment step: disable AV before dropping payloads.
+# LockBit, BlackCat, and most modern ransomware affiliates disable Defender
+# before deployment. mdecrevoisier documents this as "Defender critical
+# security component disabled" with multiple command patterns.
+# sc commands target the service; reg commands target the registry key.
+# Both are used in real incidents.
+# FALSE POSITIVE: IT admins testing Defender behavior. Should be extremely
+# rare without change management record.
+title: Windows Defender Disabled via Command Line
+event_id: "4688"
+event_ids: ["4688", "1"]
+description: >
+  Windows Defender was disabled via command-line tools (sc, reg, netsh).
+  This is the ransomware pre-deployment defense evasion step used by most
+  modern ransomware affiliates (LockBit, BlackCat, Conti) before payload
+  deployment. Service stop/disable and registry modifications both captured.
+  Source: mdecrevoisier defender-critical security components disabled (command).
+severity: critical
+confidence: 0.91
+technique: T1562.001
+mitre: Defense Evasion
+conditions:
+  - field: CommandLine
+    contains_any:
+      - "WinDefend"
+      - "SecurityHealthService"
+      - "wscsvc"
+      - "WdNisSvc"
+      - "WdFilter"
+      - "mpssvc"
+  - field: CommandLine
+    contains_any:
+      - "sc stop"
+      - "sc config"
+      - "sc delete"
+      - "net stop"
+      - "start= disabled"
+      - "start=disabled"
+      - "reg add.*\\\\Windows Defender"
+      - "DisableAntiSpyware"
+      - "DisableRealtimeMonitoring"

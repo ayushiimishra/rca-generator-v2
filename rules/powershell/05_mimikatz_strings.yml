@@ -1,0 +1,37 @@
+# SOURCE: SigmaHQ posh_ps_malicious_commandlets.yml credential subset
+#         mdecrevoisier windows-lsass PowerShell patterns
+# CONTEXT: Mimikatz commands appear literally in PowerShell script blocks
+# when Invoke-Mimikatz or similar is used. These are the actual command
+# strings passed to the Mimikatz engine.
+# sekurlsa::logonpasswords, lsadump::sam, kerberos::list are Mimikatz
+# module::command strings - they do not appear in any legitimate script.
+# FALSE POSITIVE: Security research/pentest scripts would trigger this.
+# Acceptable for production detection - investigate all hits.
+title: PowerShell Mimikatz Command Strings (Credential Dumping via PS)
+event_id: "4104"
+description: >
+  PowerShell Script Block contains Mimikatz command strings used for
+  credential dumping. These appear in scripts that load Mimikatz reflectively
+  (Invoke-Mimikatz style) and pass module commands. The literal strings
+  'sekurlsa::logonpasswords', 'lsadump::sam', 'privilege::debug' have
+  no legitimate use in PowerShell scripts - they are Mimikatz internals.
+  Requires Script Block Logging (EID 4104).
+severity: critical
+confidence: 0.98
+technique: T1003.001
+mitre: Credential Access
+conditions:
+  - field: ScriptBlockText
+    contains_any:
+      - "sekurlsa::logonpasswords"
+      - "sekurlsa::wdigest"
+      - "lsadump::sam"
+      - "lsadump::dcsync"
+      - "lsadump::lsa"
+      - "lsadump::cache"
+      - "privilege::debug"
+      - "kerberos::list"
+      - "kerberos::ptt"
+      - "dpapi::chrome"
+      - "vault::cred"
+      - "vault::list"

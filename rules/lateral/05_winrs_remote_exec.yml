@@ -1,0 +1,31 @@
+# SOURCE: mdecrevoisier windows-winrm WinRS usage for remote execution
+#         SigmaHQ proc_creation_win_winrm_execution.yml
+# CONTEXT: winrs.exe (Windows Remote Shell) is the command-line client for
+# Windows Remote Management (WinRM). Used for lateral movement: 
+# winrs -r:target cmd executes a shell on the remote host.
+# mdecrevoisier specifically documents winrs as a lateral movement indicator.
+# Less common than PSExec/WMI but increasingly used to evade detection
+# focused on traditional lateral movement tools.
+# FALSE POSITIVE: Legitimate remote administration via WinRM. Should
+# correlate with IT admin accounts and change management records.
+title: WinRS Remote Shell Execution - Lateral Movement via WinRM
+event_id: "4688"
+event_ids: ["4688", "1"]
+description: >
+  winrs.exe was used to execute commands on a remote host via Windows Remote
+  Management (WinRM). WinRS is increasingly used for lateral movement as
+  an alternative to PSExec/WMI that may evade detections focused on those
+  tools. The -r: flag specifies the remote target.
+  Source: mdecrevoisier winrm WinRS remote execution rule.
+severity: high
+confidence: 0.81
+technique: T1021.006
+mitre: Lateral Movement
+conditions:
+  - field: Image
+    ends_with_any:
+      - "\\winrs.exe"
+  - field: CommandLine
+    contains_any:
+      - "-r:"
+      - "/r:"
